@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>The Wall of Solidarity 2026</title>
+    <style>
+        body { background: #000; color: #fff; text-align: center; font-family: Arial; }
+        .grid { display: grid; grid-template-columns: repeat(100, 10px); gap: 1px; justify-content: center; }
+        .pixel { width: 10px; height: 10px; background: #222; cursor: pointer; }
+        .pixel.sold { background: #00ff41; }
+    </style>
+</head>
+<body>
+    <h1>The Wall of Solidarity 2026</h1>
+    <p>اختر بكسل لتدعم القضية وتبني مستقبلي</p>
+    <div id="grid" class="grid"></div>
+
+    <script>
+        const grid = document.getElementById('grid');
+        const SERVER_URL = "رابط_سيرفر_بايثون_الخاص_بك"; // ستحصل عليه بعد رفع ملف بايثون
+
+        // رسم 10,000 بكسل
+        for (let i = 0; i < 10000; i++) {
+            const div = document.createElement('div');
+            div.className = 'pixel';
+            div.onclick = () => buyPixel(i);
+            grid.appendChild(div);
+        }
+
+        async function buyPixel(id) {
+            const link = prompt("أدخل رابط موقعك:");
+            if (!link) return;
+
+            const formData = new FormData();
+            formData.append('pixel_id', id);
+            formData.append('link', link);
+
+            const res = await fetch(`${SERVER_URL}/create-order`, { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.ok) {
+                window.location.href = data.result.pay_url; // توجيه المشتري للبوت ليدفع
+            }
+        }
+    </script>
+</body>
+</html>
