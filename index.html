@@ -3,20 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title id="page-title">جدار التضامن 2026 - فلسطين 🇵🇸</title>
+    <title>جدار التضامن 2026 - لوحة الرسم التضامنية 🇵🇸</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
         body { background: linear-gradient(135deg, #0a2e0a 0%, #1a1a2e 100%); min-height: 100vh; font-family: 'Tajawal', 'Cairo', sans-serif; color: #fff; }
-        .lang-switch { position: fixed; top: 20px; left: 20px; z-index: 2000; background: #e74c3c; color: #fff; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        
+        .lang-switch { position: fixed; top: 20px; left: 20px; z-index: 2000; background: #e74c3c; color: #fff; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-weight: bold; z-index: 2001; }
+        
+        /* لوحة الألوان - 16 لوناً */
+        .color-palette { position: fixed; bottom: 20px; left: 20px; z-index: 2000; background: rgba(0,0,0,0.85); padding: 12px; border-radius: 20px; backdrop-filter: blur(10px); max-width: 90%; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+        .color { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.5); transition: 0.2s; }
+        .color:hover { transform: scale(1.15); border-color: #e74c3c; }
+        .color.active { border-color: #e74c3c; box-shadow: 0 0 12px #e74c3c; transform: scale(1.05); }
+        
+        .draw-info { position: fixed; bottom: 20px; right: 20px; z-index: 2000; background: rgba(0,0,0,0.8); padding: 10px 15px; border-radius: 15px; font-size: 12px; text-align: center; }
+        
         .header { text-align: center; padding: 40px 20px 20px; background: rgba(0,0,0,0.5); }
         .header h1 { font-size: 32px; color: #e74c3c; }
         .goal-bar { background: rgba(0,0,0,0.7); padding: 15px 20px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px; border-bottom: 2px solid #e74c3c; }
         .goal-stat { text-align: center; flex: 1; }
         .goal-stat .number { font-size: 28px; font-weight: bold; color: #e74c3c; }
-        .pixel-wall { display: grid; grid-template-columns: repeat(100, 1fr); gap: 1px; background: #222; padding: 20px; overflow-x: auto; }
-        .pixel { aspect-ratio: 1/1; background: #2d2d2d; border: 1px solid #3d3d3d; cursor: pointer; transition: 0.2s; }
-        .pixel:hover { background: #e74c3c; transform: scale(1.05); }
-        .pixel.sold { background: #e74c3c; border-color: #ffd700; background-size: cover; }
+        .pixel-wall { display: grid; grid-template-columns: repeat(100, 1fr); gap: 1px; background: #222; padding: 20px; overflow-x: auto; cursor: crosshair; }
+        .pixel { aspect-ratio: 1/1; background: #2d2d2d; border: 1px solid #3d3d3d; transition: 0.05s; }
+        .pixel.sold { background-size: cover; background-position: center; border: 1px solid #ffd700; }
+        .pixel.drawn { background-size: cover; background-position: center; }
         .wall-message { text-align: center; padding: 20px; background: rgba(231,76,60,0.1); margin: 10px 20px; border-radius: 15px; }
         .purchase-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: #1a2e1a; padding: 30px; border-radius: 20px; border: 2px solid #e74c3c; width: 90%; max-width: 450px; text-align: center; }
@@ -28,17 +38,43 @@
         .social-icons a { color: #fff; text-decoration: none; padding: 8px 20px; border-radius: 30px; background: rgba(255,255,255,0.1); }
         .social-icons a:hover { background: #e74c3c; }
         .footer { text-align: center; padding: 15px; background: #0a0a0a; font-size: 12px; opacity: 0.7; }
-        .loading { position: fixed; bottom: 20px; right: 20px; background: #e74c3c; padding: 8px 16px; border-radius: 20px; display: none; }
-        @media (max-width: 768px) { .header h1 { font-size: 24px; } .goal-stat .number { font-size: 20px; } }
+        .loading { position: fixed; bottom: 20px; right: 20px; background: #e74c3c; padding: 8px 16px; border-radius: 20px; display: none; z-index: 2000; }
+        @media (max-width: 768px) { .header h1 { font-size: 24px; } .color { width: 32px; height: 32px; } .color-palette { gap: 6px; padding: 8px; } }
     </style>
 </head>
 <body>
 
 <button class="lang-switch" onclick="toggleLanguage()" id="lang-btn">English</button>
 
+<!-- لوحة الألوان - 16 لوناً كاملاً -->
+<div class="color-palette" id="color-palette">
+    <div class="color" style="background: #e74c3c;" data-color="red" title="أحمر"></div>
+    <div class="color" style="background: #2c3e50;" data-color="black" title="أسود"></div>
+    <div class="color" style="background: #ecf0f1;" data-color="white" title="أبيض"></div>
+    <div class="color" style="background: #2ecc71;" data-color="green" title="أخضر"></div>
+    <div class="color" style="background: #f1c40f;" data-color="gold" title="ذهبي"></div>
+    <div class="color" style="background: #3498db;" data-color="blue" title="أزرق"></div>
+    <div class="color" style="background: #e67e22;" data-color="orange" title="برتقالي"></div>
+    <div class="color" style="background: #9b59b6;" data-color="purple" title="بنفسجي"></div>
+    <div class="color" style="background: #1abc9c;" data-color="cyan" title="سماوي"></div>
+    <div class="color" style="background: #fd79a8;" data-color="pink" title="وردي"></div>
+    <div class="color" style="background: #8B4513;" data-color="brown" title="بني"></div>
+    <div class="color" style="background: #34495e;" data-color="navy" title="كحلي"></div>
+    <div class="color" style="background: #ffeaa7;" data-color="lightyellow" title="أصفر فاتح"></div>
+    <div class="color" style="background: #55efc4;" data-color="lightgreen" title="أخضر فاتح"></div>
+    <div class="color" style="background: #74b9ff;" data-color="lightblue" title="أزرق فاتح"></div>
+    <div class="color" style="background: #b2bec3;" data-color="gray" title="رمادي"></div>
+</div>
+
+<div class="draw-info" id="draw-info">
+    🎨 16 لوناً للرسم<br>
+    🖱️ اضغط واسحب للرسم<br>
+    💰 اضغط على بكسل لشرائه
+</div>
+
 <div class="header">
     <h1 id="main-title">🇵🇸 THE WALL OF SOLIDARITY 2026 🇵🇸</h1>
-    <p id="sub-title">مليون بكسل.. هدف واحد. خلد تضامنك في الجدارية الرقمية الكبرى</p>
+    <p id="sub-title">ارسم تضامنك بـ 16 لوناً.. كل بكسل هو رسالة حب لفلسطين</p>
 </div>
 
 <div class="goal-bar">
@@ -47,7 +83,7 @@
     <div class="goal-stat"><div class="number">1$</div><div id="label-price" class="label">سعر البكسل</div></div>
 </div>
 
-<div class="wall-message"><p id="desc-text">🎯 أصواتنا هي القوة. هدفنا الوصول إلى مليون بكسل ليسمع العالم صوت تضامننا. بكسل واحد منك، يقربنا من المليون.</p></div>
+<div class="wall-message"><p id="desc-text">🎨 اختر لوناً من اللوحة.. ارسم بحرية.. اضغط على بكسل لشرائه وتخليد رابطك.</p></div>
 
 <div id="pixel-wall" class="pixel-wall"></div>
 
@@ -60,16 +96,16 @@
     </div>
 </div>
 
-<div class="footer" id="footer-text">The Wall of Solidarity 2026 - حيث تلتقي القلوب لتبني جدار المستحيل</div>
+<div class="footer" id="footer-text">The Wall of Solidarity 2026 - حيث ترسم القلوب بـ 16 لوناً جدار المستحيل</div>
 
 <div id="purchase-modal" class="purchase-modal">
     <div class="modal-content">
         <div style="font-size: 40px;">🇵🇸</div>
-        <h2 id="modal-title">ضع بصمتك الآن</h2>
-        <p id="modal-desc">رابط موقعك سيبقى خالداً هنا حتى نصل للمليون صوت</p>
+        <h2 id="modal-title">اشتر هذا البكسل</h2>
+        <p id="modal-desc">بعد الشراء، سيظهر رابطك ويمنع الرسم عليه</p>
         <input type="text" id="owner-name" placeholder="اسمك أو معرفك">
         <input type="url" id="owner-url" placeholder="رابط حسابك">
-        <button id="confirm-purchase">✅ تأكيد الشراء</button>
+        <button id="confirm-purchase">✅ تأكيد الشراء (1$)</button>
         <button onclick="closeModal()" class="close-btn" id="cancel-btn">❌ إلغاء</button>
     </div>
 </div>
@@ -80,63 +116,92 @@
     const SERVER_URL = "https://thewallofsolidarity20261-production.up.railway.app";
     let currentLang = 'ar';
     let selectedPixel = null;
-    let allPixels = [];
-    let soldPixels = new Set();
+    let soldPixels = new Map();
+    let drawnPixels = new Map();
+    let currentColor = "#e74c3c";
+    let currentColorName = "red";
+    let ws = null;
+    let isDrawing = false;
 
+    // 16 لوناً مع أسمائها
+    const colorsMap = {
+        red: "#e74c3c", black: "#2c3e50", white: "#ecf0f1", green: "#2ecc71",
+        gold: "#f1c40f", blue: "#3498db", orange: "#e67e22", purple: "#9b59b6",
+        cyan: "#1abc9c", pink: "#fd79a8", brown: "#8B4513", navy: "#34495e",
+        lightyellow: "#ffeaa7", lightgreen: "#55efc4", lightblue: "#74b9ff", gray: "#b2bec3"
+    };
+
+    // الترجمة
     const translations = {
         ar: {
-            title: "جدار التضامن 2026 - فلسطين 🇵🇸", mainTitle: "🇵🇸 THE WALL OF SOLIDARITY 2026 🇵🇸",
-            subTitle: "مليون بكسل.. هدف واحد. خلد تضامنك في الجدارية الرقمية الكبرى",
+            title: "جدار التضامن 2026 - لوحة الرسم بـ 16 لوناً 🇵🇸",
+            mainTitle: "🇵🇸 THE WALL OF SOLIDARITY 2026 🇵🇸",
+            subTitle: "ارسم تضامنك بـ 16 لوناً.. كل بكسل هو رسالة حب لفلسطين",
             sold: "بكسل مباع", target: "هدف المليون", price: "سعر البكسل",
-            desc: "🎯 أصواتنا هي القوة. هدفنا الوصول إلى مليون بكسل ليسمع العالم صوت تضامننا.",
+            desc: "🎨 اختر لوناً من اللوحة.. ارسم بحرية.. اضغط على بكسل لشرائه وتخليد رابطك.",
             social: "📢 انضم لمجتمعنا وشارك في الرحلة",
-            footer: "The Wall of Solidarity 2026 - حيث تلتقي القلوب لتبني جدار المستحيل",
-            modalTitle: "ضع بصمتك الآن", modalDesc: "رابط موقعك سيبقى خالداً هنا حتى نصل للمليون صوت",
-            confirm: "✅ تأكيد الشراء", cancel: "❌ إلغاء", langBtn: "English",
-            soldAlert: "❌ هذا البكسل تم بيعه بالفعل!", fillFields: "❌ الرجاء إدخال اسمك ورابط حسابك",
+            footer: "The Wall of Solidarity 2026 - حيث ترسم القلوب بـ 16 لوناً جدار المستحيل",
+            modalTitle: "اشتر هذا البكسل", modalDesc: "بعد الشراء، سيظهر رابطك ويمنع الرسم عليه",
+            confirm: "✅ تأكيد الشراء (1$)", cancel: "❌ إلغاء", langBtn: "English",
+            soldAlert: "❌ هذا البكسل تم شراؤه بالفعل!", fillFields: "❌ الرجاء إدخال اسمك ورابط حسابك",
             freePixel: "🎉 تهانينا! لقد حصلت على بكسل مجاني!", paymentSuccess: "✅ تم تأكيد الدفع!",
             processing: "⏳ جاري المعالجة...", waiting: "⏳ في انتظار تأكيد الدفع..."
         },
         en: {
-            title: "The Wall of Solidarity 2026 - Palestine 🇵🇸", mainTitle: "🇵🇸 THE WALL OF SOLIDARITY 2026 🇵🇸",
-            subTitle: "One Million Pixels.. One Goal. Immortalize your solidarity.",
+            title: "The Wall of Solidarity 2026 - 16-Color Drawing Canvas 🇵🇸",
+            mainTitle: "🇵🇸 THE WALL OF SOLIDARITY 2026 🇵🇸",
+            subTitle: "Draw your solidarity with 16 colors.. Every pixel is a message of love for Palestine",
             sold: "Pixels Sold", target: "Million Goal", price: "Price per Pixel",
-            desc: "🎯 Our voices are our power. One pixel from you brings us closer.",
+            desc: "🎨 Choose a color from the palette.. Draw freely.. Click a pixel to buy it and immortalize your link.",
             social: "📢 Join our community and share the journey",
-            footer: "The Wall of Solidarity 2026 - where hearts meet to build the impossible",
-            modalTitle: "Leave Your Mark Now", modalDesc: "Your link will stay here forever.",
-            confirm: "✅ Confirm Purchase", cancel: "❌ Cancel", langBtn: "العربية",
-            soldAlert: "❌ This pixel is already sold!", fillFields: "❌ Please enter your name and URL",
+            footer: "The Wall of Solidarity 2026 - where hearts draw the wall of the impossible with 16 colors",
+            modalTitle: "Buy This Pixel", modalDesc: "After purchase, your link will appear and drawing will be locked",
+            confirm: "✅ Confirm Purchase (1$)", cancel: "❌ Cancel", langBtn: "العربية",
+            soldAlert: "❌ This pixel has already been sold!", fillFields: "❌ Please enter your name and URL",
             freePixel: "🎉 Congratulations! You got a free pixel!", paymentSuccess: "✅ Payment confirmed!",
             processing: "⏳ Processing...", waiting: "⏳ Waiting for payment confirmation..."
         }
     };
 
-    function toggleLanguage() {
-        currentLang = currentLang === 'ar' ? 'en' : 'ar';
-        const t = translations[currentLang];
-        document.getElementById('main-html').dir = currentLang === 'ar' ? 'rtl' : 'ltr';
-        document.getElementById('main-html').lang = currentLang;
-        document.getElementById('page-title').innerText = t.title;
-        document.getElementById('main-title').innerText = t.mainTitle;
-        document.getElementById('sub-title').innerText = t.subTitle;
-        document.getElementById('label-sold').innerText = t.sold;
-        document.getElementById('label-target').innerText = t.target;
-        document.getElementById('label-price').innerText = t.price;
-        document.getElementById('desc-text').innerText = t.desc;
-        document.getElementById('social-title').innerText = t.social;
-        document.getElementById('footer-text').innerText = t.footer;
-        document.getElementById('modal-title').innerText = t.modalTitle;
-        document.getElementById('modal-desc').innerText = t.modalDesc;
-        document.getElementById('confirm-purchase').innerText = t.confirm;
-        document.getElementById('cancel-btn').innerText = t.cancel;
-        document.getElementById('lang-btn').innerText = t.langBtn;
+    function connectWebSocket() {
+        const wsUrl = SERVER_URL.replace("https://", "").replace("http://", "");
+        ws = new WebSocket(`wss://${wsUrl}/ws`);
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === "draw") {
+                drawnPixels.set(`${data.x},${data.y}`, data.color);
+                updatePixelDisplay(data.x, data.y);
+            } else if (data.type === "sold") {
+                soldPixels.set(`${data.x},${data.y}`, { owner: data.owner, url: data.url });
+                updatePixelDisplay(data.x, data.y);
+            }
+        };
+        ws.onclose = () => setTimeout(connectWebSocket, 3000);
     }
 
-    function closeModal() {
-        document.getElementById('purchase-modal').style.display = 'none';
-        document.getElementById('owner-name').value = '';
-        document.getElementById('owner-url').value = '';
+    function updatePixelDisplay(x, y) {
+        const key = `${x},${y}`;
+        const pixel = document.querySelector(`.pixel[data-x='${x}'][data-y='${y}']`);
+        if (!pixel) return;
+        
+        if (soldPixels.has(key)) {
+            pixel.classList.add('sold');
+            pixel.classList.remove('drawn');
+            const sold = soldPixels.get(key);
+            if (sold && sold.url) {
+                pixel.style.backgroundImage = `url('https://favicon.yandex.net/favicon/${sold.url}')`;
+                pixel.style.backgroundColor = "";
+            }
+        } else if (drawnPixels.has(key)) {
+            pixel.classList.remove('sold');
+            pixel.classList.add('drawn');
+            pixel.style.backgroundColor = drawnPixels.get(key);
+            pixel.style.backgroundImage = "none";
+        } else {
+            pixel.classList.remove('sold', 'drawn');
+            pixel.style.backgroundColor = "#2d2d2d";
+            pixel.style.backgroundImage = "none";
+        }
     }
 
     function createWall() {
@@ -145,31 +210,64 @@
         for (let y = 0; y < 100; y++) {
             for (let x = 0; x < 100; x++) {
                 const pixel = document.createElement('div');
-                pixel.className = 'pixel' + (soldPixels.has(`${x},${y}`) ? ' sold' : '');
-                if (soldPixels.has(`${x},${y}`)) {
-                    const sold = allPixels.find(p => p.x === x && p.y === y);
-                    if (sold && sold.url) pixel.style.backgroundImage = `url('https://favicon.yandex.net/favicon/${sold.url}')`;
-                }
-                pixel.onclick = () => openPurchase(x, y);
+                pixel.className = 'pixel';
+                pixel.setAttribute('data-x', x);
+                pixel.setAttribute('data-y', y);
+                updatePixelDisplay(x, y);
+                pixel.onclick = (e) => {
+                    e.stopPropagation();
+                    openPurchase(x, y);
+                };
+                pixel.onmousedown = (e) => {
+                    if (soldPixels.has(`${x},${y}`)) return;
+                    isDrawing = true;
+                    drawPixel(x, y);
+                    e.preventDefault();
+                };
+                pixel.onmouseover = () => {
+                    if (isDrawing && !soldPixels.has(`${x},${y}`)) drawPixel(x, y);
+                };
                 wall.appendChild(pixel);
             }
         }
         document.getElementById('sold-count').innerText = soldPixels.size;
     }
 
-    async function fetchSoldPixels() {
+    function drawPixel(x, y) {
+        if (soldPixels.has(`${x},${y}`)) return;
+        drawnPixels.set(`${x},${y}`, currentColor);
+        updatePixelDisplay(x, y);
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: "draw", x, y, color: currentColor }));
+        }
+    }
+
+    async function fetchData() {
         try {
-            const res = await fetch(`${SERVER_URL}/pixels`);
-            const data = await res.json();
-            allPixels = data.pixels || [];
+            const soldRes = await fetch(`${SERVER_URL}/pixels/sold`);
+            const soldData = await soldRes.json();
             soldPixels.clear();
-            allPixels.forEach(p => soldPixels.add(`${p.x},${p.y}`));
+            if (soldData.pixels) {
+                soldData.pixels.forEach(p => soldPixels.set(`${p.x},${p.y}`, { owner: p.owner, url: p.url }));
+            }
+            
+            const drawnRes = await fetch(`${SERVER_URL}/pixels/drawn`);
+            const drawnData = await drawnRes.json();
+            drawnPixels.clear();
+            if (drawnData.pixels) {
+                drawnData.pixels.forEach(p => drawnPixels.set(`${p.x},${p.y}`, p.color));
+            }
+            
             createWall();
-        } catch(e) { createWall(); }
+        } catch(e) { 
+            console.error("Fetch error:", e);
+            createWall(); 
+        }
     }
 
     function openPurchase(x, y) {
-        if (soldPixels.has(`${x},${y}`)) { alert(translations[currentLang].soldAlert); return; }
+        const t = translations[currentLang];
+        if (soldPixels.has(`${x},${y}`)) { alert(t.soldAlert); return; }
         selectedPixel = { x, y };
         document.getElementById('purchase-modal').style.display = 'flex';
     }
@@ -190,7 +288,7 @@
                 loading.style.display = 'none';
                 closeModal();
                 alert(t.freePixel);
-                fetchSoldPixels();
+                fetchData();
                 return;
             }
             if (data.pay_url) {
@@ -221,7 +319,7 @@
                 if (data.status === 'paid') {
                     loading.style.display = 'none';
                     alert(t.paymentSuccess);
-                    fetchSoldPixels();
+                    fetchData();
                     return;
                 }
             } catch(e) {}
@@ -229,6 +327,45 @@
         loading.style.display = 'none';
         alert("Payment not confirmed within 5 minutes");
     }
+
+    function closeModal() {
+        document.getElementById('purchase-modal').style.display = 'none';
+        document.getElementById('owner-name').value = '';
+        document.getElementById('owner-url').value = '';
+    }
+
+    function toggleLanguage() {
+        currentLang = currentLang === 'ar' ? 'en' : 'ar';
+        const t = translations[currentLang];
+        document.getElementById('main-html').dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+        document.getElementById('main-html').lang = currentLang;
+        document.getElementById('page-title').innerText = t.title;
+        document.getElementById('main-title').innerText = t.mainTitle;
+        document.getElementById('sub-title').innerText = t.subTitle;
+        document.getElementById('label-sold').innerText = t.sold;
+        document.getElementById('label-target').innerText = t.target;
+        document.getElementById('label-price').innerText = t.price;
+        document.getElementById('desc-text').innerText = t.desc;
+        document.getElementById('social-title').innerText = t.social;
+        document.getElementById('footer-text').innerText = t.footer;
+        document.getElementById('modal-title').innerText = t.modalTitle;
+        document.getElementById('modal-desc').innerText = t.modalDesc;
+        document.getElementById('confirm-purchase').innerText = t.confirm;
+        document.getElementById('cancel-btn').innerText = t.cancel;
+        document.getElementById('lang-btn').innerText = t.langBtn;
+    }
+
+    // إعدادات الألوان
+    document.querySelectorAll('.color').forEach(el => {
+        el.addEventListener('click', () => {
+            document.querySelectorAll('.color').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            currentColorName = el.dataset.color;
+            currentColor = colorsMap[currentColorName];
+        });
+    });
+    document.querySelector('.color').classList.add('active');
+    document.addEventListener('mouseup', () => isDrawing = false);
 
     document.getElementById('confirm-purchase').onclick = () => {
         const t = translations[currentLang];
@@ -238,7 +375,8 @@
         createInvoice(owner, url);
     };
 
-    fetchSoldPixels();
+    connectWebSocket();
+    fetchData();
 </script>
 </body>
 </html>
