@@ -75,8 +75,12 @@
     <div class="loading" id="loading" style="display: none;">⏳ جاري المعالجة...</div>
 
     <script>
-        // ✅ تم التحديث إلى رابط Fly.io الجديد
-        const API_URL = "https://thewallofsolidarity20261.fly.dev";
+        // ✅ ضع هنا رابط السيرفر الخاص بك (Render, Fly.io, Railway, إلخ)
+        // مثال: "https://your-project-name.up.railway.app" أو "https://your-app.onrender.com"
+        const SERVER_URL = "https://your-project-name.up.railway.app";
+        
+        // استخدام نفس الرابط لجميع طلبات API
+        const API_URL = SERVER_URL;
         
         let selectedPixel = null;
         let allPixels = [];
