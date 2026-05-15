@@ -167,10 +167,8 @@ def create_invoice(purchase: PixelPurchase):
     
     if existing:
         raise HTTPException(status_code=400, detail="Pixel already sold")
-    
-    # تحديد السعر حسب الموقع (مثال: البكسلات في المنتصف أغلى)
-    price = 5.0  # سعر ثابت أو يمكن جعله متغيراً حسب الموقع
-    
+    # في دالة create_invoice
+price = 1.0  # تم التعديل من 5 إلى 1 دولار
     # إنشاء فاتورة عبر CryptoBot
     invoice_id, pay_url = create_crypto_invoice(price, "USDT", f"Pixel ({purchase.x},{purchase.y})")
     
