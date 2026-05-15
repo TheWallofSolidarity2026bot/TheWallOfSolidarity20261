@@ -1,46 +1,376 @@
+<!-- frontend/index.html -->
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>The Wall of Solidarity 2026</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>PIXEL WALL - Buy Your Pixel</title>
     <style>
-        body { background: #000; color: #fff; text-align: center; font-family: Arial; }
-        .grid { display: grid; grid-template-columns: repeat(100, 10px); gap: 1px; justify-content: center; }
-        .pixel { width: 10px; height: 10px; background: #222; cursor: pointer; }
-        .pixel.sold { background: #00ff41; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            color: #fff;
+        }
+
+        /* شريط الإحصائيات */
+        .stats-bar {
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            border-bottom: 1px solid rgba(255,215,0,0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .stat {
+            background: rgba(255,215,0,0.1);
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .stat span {
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        /* الحاوية الرئيسية */
+        .pixel-wall {
+            display: grid;
+            grid-template-columns: repeat(100, 1fr);
+            gap: 1px;
+            background: #222;
+            padding: 20px;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        /* البكسل الواحد */
+        .pixel {
+            aspect-ratio: 1 / 1;
+            background: #2d2d2d;
+            border: 1px solid #3d3d3d;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .pixel:hover {
+            background: #4d4d4d;
+            transform: scale(1.05);
+            z-index: 10;
+            box-shadow: 0 0 10px rgba(255,215,0,0.5);
+        }
+
+        .pixel.sold {
+            background-size: cover;
+            background-position: center;
+            border: 1px solid #ffd700;
+        }
+
+        /* الفورم */
+        .purchase-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid #ffd700;
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+        }
+
+        .modal-content h2 {
+            color: #ffd700;
+            margin-bottom: 20px;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: #0f0f1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px;
+        }
+
+        .modal-content button {
+            background: #ffd700;
+            color: #000;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+
+        .modal-content button:hover {
+            background: #ffed4a;
+            transform: scale(1.02);
+        }
+
+        .close-modal {
+            background: #ff4444 !important;
+            color: #fff !important;
+        }
+
+        /* مؤشر التحميل */
+        .loading {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #ffd700;
+            color: #000;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .pixel-wall {
+                gap: 1px;
+            }
+            .stat {
+                font-size: 10px;
+                padding: 4px 10px;
+            }
+        }
     </style>
 </head>
 <body>
-    <h1>The Wall of Solidarity 2026</h1>
-    <p>اختر بكسل لتدعم القضية وتبني مستقبلي</p>
-    <div id="grid" class="grid"></div>
+    <div class="stats-bar">
+        <div class="stat">🎨 <span id="sold-count">0</span> / 10,000 Pixels</div>
+        <div class="stat">💰 1 Pixel = <span id="price">5</span> USDT</div>
+        <div class="stat">⚡ Powered by CryptoBot</div>
+    </div>
+
+    <div id="pixel-wall" class="pixel-wall"></div>
+
+    <div id="purchase-modal" class="purchase-modal">
+        <div class="modal-content">
+            <h2>🎨 BUY THIS PIXEL</h2>
+            <p>Pixel: <strong id="pixel-coords"></strong></p>
+            <p>Price: <strong id="pixel-price">5</strong> USDT</p>
+            <input type="text" id="owner-name" placeholder="Your Name / Username" required>
+            <input type="url" id="owner-url" placeholder="Your URL (Instagram, Telegram, Website...)" required>
+            <button id="confirm-purchase">✅ Confirm Purchase</button>
+            <button id="close-modal" class="close-modal">❌ Cancel</button>
+        </div>
+    </div>
+
+    <div class="loading" id="loading" style="display: none;">⏳ Processing...</div>
 
     <script>
-        const grid = document.getElementById('grid');
-        const SERVER_URL = "https://thewallofsolidarity20261-bp89.onrender.com"; // ستحصل عليه بعد رفع ملف بايثون
+        // ===================== الإعدادات =====================
+        // رابط خادم FastAPI (غيّره إلى رابط Render الخاص بك)
+        const API_URL = "https://your-backend.onrender.com";
+        
+        // ===================== المتغيرات =====================
+        let selectedPixel = null;
+        let allPixels = [];
+        let soldPixels = new Set();
 
-        // رسم 10,000 بكسل
-        for (let i = 0; i < 10000; i++) {
-            const div = document.createElement('div');
-            div.className = 'pixel';
-            div.onclick = () => buyPixel(i);
-            grid.appendChild(div);
+        // ===================== إنشاء الجدار =====================
+        function createWall() {
+            const wall = document.getElementById('pixel-wall');
+            wall.innerHTML = '';
+            
+            for (let y = 0; y < 100; y++) {
+                for (let x = 0; x < 100; x++) {
+                    const pixel = document.createElement('div');
+                    pixel.className = 'pixel';
+                    pixel.dataset.x = x;
+                    pixel.dataset.y = y;
+                    
+                    // التحقق إذا كان البكسل مباعاً
+                    const sold = soldPixels.has(`${x},${y}`);
+                    if (sold) {
+                        pixel.classList.add('sold');
+                        const soldData = allPixels.find(p => p.x === x && p.y === y);
+                        if (soldData && soldData.url) {
+                            pixel.style.backgroundImage = `url('https://favicon.yandex.net/favicon/${soldData.url}')`;
+                            pixel.style.backgroundSize = 'cover';
+                        }
+                    }
+                    
+                    pixel.onclick = () => openPurchase(x, y, sold);
+                    wall.appendChild(pixel);
+                }
+            }
+            
+            updateStats();
         }
 
-        async function buyPixel(id) {
-            const link = prompt("أدخل رابط موقعك:");
-            if (!link) return;
+        // ===================== تحديث الإحصائيات =====================
+        function updateStats() {
+            document.getElementById('sold-count').innerText = soldPixels.size;
+        }
 
-            const formData = new FormData();
-            formData.append('pixel_id', id);
-            formData.append('link', link);
-
-            const res = await fetch(`${SERVER_URL}/create-order`, { method: 'POST', body: formData });
-            const data = await res.json();
-            if (data.ok) {
-                window.location.href = data.result.pay_url; // توجيه المشتري للبوت ليدفع
+        // ===================== جلب البكسلات المباعة =====================
+        async function fetchSoldPixels() {
+            try {
+                const response = await fetch(`${API_URL}/pixels`);
+                const data = await response.json();
+                allPixels = data.pixels || [];
+                soldPixels.clear();
+                allPixels.forEach(p => {
+                    soldPixels.add(`${p.x},${p.y}`);
+                });
+                createWall();
+            } catch (error) {
+                console.error('Error fetching pixels:', error);
+                createWall();
             }
         }
+
+        // ===================== فتح نموذج الشراء =====================
+        function openPurchase(x, y, isSold) {
+            if (isSold) {
+                alert('❌ This pixel is already sold!');
+                return;
+            }
+            selectedPixel = { x, y };
+            document.getElementById('pixel-coords').innerText = `(${x}, ${y})`;
+            document.getElementById('purchase-modal').style.display = 'flex';
+        }
+
+        // ===================== إنشاء فاتورة ودفع =====================
+        async function createInvoice(owner, url) {
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+            
+            try {
+                const response = await fetch(`${API_URL}/create-invoice`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        x: selectedPixel.x,
+                        y: selectedPixel.y,
+                        owner: owner,
+                        url: url
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.pay_url) {
+                    loading.style.display = 'none';
+                    document.getElementById('purchase-modal').style.display = 'none';
+                    
+                    // فتح رابط الدفع في نافذة جديدة
+                    window.open(data.pay_url, '_blank');
+                    
+                    // بدء التحقق من حالة الدفع
+                    checkPaymentStatus(data.invoice_id);
+                } else {
+                    loading.style.display = 'none';
+                    alert('❌ Failed to create invoice. Try again.');
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                alert('❌ Network error: ' + error.message);
+            }
+        }
+
+        // ===================== التحقق من حالة الدفع =====================
+        async function checkPaymentStatus(invoiceId) {
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+            loading.innerText = '⏳ Waiting for payment confirmation...';
+            
+            let attempts = 0;
+            const maxAttempts = 60; // 5 دقائق (كل 5 ثواني)
+            
+            const interval = setInterval(async () => {
+                attempts++;
+                try {
+                    const response = await fetch(`${API_URL}/check-invoice/${invoiceId}`);
+                    const data = await response.json();
+                    
+                    if (data.status === 'paid') {
+                        clearInterval(interval);
+                        loading.style.display = 'none';
+                        loading.innerText = '⏳ Processing...';
+                        alert('✅ Payment confirmed! Your pixel has been added to the wall.');
+                        fetchSoldPixels(); // تحديث الجدار
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(interval);
+                        loading.style.display = 'none';
+                        loading.innerText = '⏳ Processing...';
+                        alert('⚠️ Payment not confirmed within 5 minutes. Please contact support.');
+                    }
+                } catch (error) {
+                    console.error('Check status error:', error);
+                }
+            }, 5000); // كل 5 ثواني
+        }
+
+        // ===================== أحداث النموذج =====================
+        document.getElementById('confirm-purchase').onclick = () => {
+            const owner = document.getElementById('owner-name').value.trim();
+            const url = document.getElementById('owner-url').value.trim();
+            
+            if (!owner) {
+                alert('❌ Please enter your name/username');
+                return;
+            }
+            if (!url) {
+                alert('❌ Please enter your URL');
+                return;
+            }
+            
+            createInvoice(owner, url);
+        };
+        
+        document.getElementById('close-modal').onclick = () => {
+            document.getElementById('purchase-modal').style.display = 'none';
+            document.getElementById('owner-name').value = '';
+            document.getElementById('owner-url').value = '';
+            selectedPixel = null;
+        };
+        
+        // النقر خارج النموذج لإغلاقه
+        window.onclick = (e) => {
+            const modal = document.getElementById('purchase-modal');
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        };
+        
+        // ===================== بدء التشغيل =====================
+        fetchSoldPixels();
     </script>
 </body>
 </html>
