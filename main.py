@@ -17,7 +17,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 # ------------------------- التكوين -------------------------
-BOT_TOKEN = ""  # اتركه فارغاً (لا تحتاجه حالياً)
+# ✅ ضع توكن البوت الخاص بك هنا (من @CryptoBot)
+BOT_TOKEN = ""  # اتركه فارغاً حالياً، أو ضع التوكن إذا كان لديك
 CHAT_ID = ""    # اتركه فارغاً
 CRYPTOBOT_API = "https://pay.crypt.bot/api"
 
@@ -29,17 +30,17 @@ FREE_PIXELS = {(0, 0)}
 
 app = FastAPI()
 
-# CORS لتسمح للواجهة الأمامية بالتواصل
+# ✅✅✅ حل مشكلة CORS (الأهم) ✅✅✅
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # يسمح لجميع المواقع (GitHub Pages, إلخ)
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # يسمح بجميع الطرق (GET, POST, إلخ)
+    allow_headers=["*"],  # يسمح بجميع الرؤوس
 )
 
 # ------------------------- قاعدة البيانات -------------------------
-DB_PATH = "/tmp/pixels.db" if os.environ.get("RENDER") else "pixels.db"
+DB_PATH = "/tmp/pixels.db" if os.environ.get("RAILWAY") else "pixels.db"
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
@@ -69,7 +70,7 @@ def init_db():
     ''')
     conn.commit()
     conn.close()
-    print("Database initialized at", DB_PATH)
+    print("✅ Database initialized at", DB_PATH)
 
 init_db()
 
@@ -82,23 +83,35 @@ class PixelPurchase(BaseModel):
 
 # ------------------------- دوال مساعدة -------------------------
 def create_crypto_invoice(amount: float, currency: str = "USDT", description: str = "Pixel Purchase"):
+    """إنشاء فاتورة عبر CryptoBot API"""
     if not BOT_TOKEN:
-        return "test_invoice_123", f"https://t.me/CryptoBot?start=test_{description}"
+        # ✅ وضع تجريبي (للتجربة بدون دفع حقيقي)
+        return f"test_{description.replace(' ', '_')}", f"https://t.me/CryptoBot?start=test_{description.replace(' ', '_')}"
+    
     try:
         url = f"{CRYPTOBOT_API}/createInvoice"
         headers = {"Crypto-Pay-API-Token": BOT_TOKEN}
-        payload = {"asset": currency, "amount": str(amount), "description": description}
+        payload = {
+            "asset": currency,
+            "amount": str(amount),
+            "description": description,
+            "paid_btn_name": "callback",
+            "paid_btn_url": "https://t.me/YourBot"
+        }
         response = requests.post(url, headers=headers, json=payload, timeout=30)
         data = response.json()
         if data.get("ok"):
             return data["result"]["invoice_id"], data["result"]["pay_url"]
         return None, None
-    except:
+    except Exception as e:
+        print(f"Error creating invoice: {e}")
         return None, None
 
 def check_invoice_status(invoice_id: str) -> str:
-    if not BOT_TOKEN or invoice_id == "test_invoice_123":
-        return "paid"
+    """التحقق من حالة الفاتورة"""
+    if not BOT_TOKEN or invoice_id.startswith("test_"):
+        return "paid"  # وضع تجريبي
+    
     try:
         url = f"{CRYPTOBOT_API}/getInvoices"
         headers = {"Crypto-Pay-API-Token": BOT_TOKEN}
@@ -132,10 +145,13 @@ def root():
 
 @app.get("/pixels")
 def get_pixels():
+    """جلب جميع البكسلات المباعة"""
     return {"pixels": get_all_pixels()}
 
 @app.post("/create-invoice")
 def create_invoice(purchase: PixelPurchase):
+    """إنشاء فاتورة دفع لبكسل معين"""
+    # التحقق من أن البكسل غير مباع
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM pixels WHERE x = ? AND y = ?", (purchase.x, purchase.y))
@@ -145,19 +161,22 @@ def create_invoice(purchase: PixelPurchase):
     if existing:
         raise HTTPException(status_code=400, detail="Pixel already sold")
     
-    # التحقق إذا كان البكسل مجانياً
+    # ✅ التحقق إذا كان البكسل مجانياً (أول بكسل)
     is_free = (purchase.x, purchase.y) in FREE_PIXELS
     
     if is_free:
         save_pixel(purchase.x, purchase.y, purchase.owner, purchase.url)
         return {"invoice_id": "free_pixel", "pay_url": None, "amount": 0, "free": True}
     
+    # ✅ البكسلات المدفوعة (1 دولار)
     price = 1.0
     invoice_id, pay_url = create_crypto_invoice(price, "USDT", f"Pixel ({purchase.x},{purchase.y})")
     
     if not invoice_id:
-        raise HTTPException(status_code=500, detail="Failed to create invoice")
+        # ✅ في حال فشل إنشاء الفاتورة، نرجع رد خطأ واضح
+        raise HTTPException(status_code=500, detail="Failed to create invoice. Check BOT_TOKEN.")
     
+    # حفظ معلومات الفاتورة
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute(
@@ -171,6 +190,7 @@ def create_invoice(purchase: PixelPurchase):
 
 @app.post("/webhook")
 async def crypto_webhook(request: Request):
+    """Webhook من CryptoBot لتأكيد الدفع"""
     try:
         body = await request.json()
         if body.get("event") == "invoice_paid":
@@ -191,6 +211,7 @@ async def crypto_webhook(request: Request):
 
 @app.get("/check-invoice/{invoice_id}")
 def check_invoice(invoice_id: str):
+    """التحقق من حالة فاتورة"""
     status = check_invoice_status(invoice_id)
     if status == "paid":
         conn = sqlite3.connect(DB_PATH)
