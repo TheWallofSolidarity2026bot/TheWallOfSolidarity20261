@@ -1,259 +1,116 @@
-<!-- frontend/index.html -->
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>جدار الدعم - فلسطين 🇵🇸</title>
+    <title>جدار التضامن 2026 - فلسطين 🇵🇸</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            user-select: none;
-        }
-
-        body {
-            background: linear-gradient(135deg, #0a2e0a 0%, #1a1a2e 100%);
-            min-height: 100vh;
-            font-family: 'Tajawal', 'Cairo', 'Courier New', monospace;
-            color: #fff;
-        }
-
-        /* شريط الإحصائيات */
-        .stats-bar {
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(10px);
-            padding: 12px 20px;
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 15px;
-            border-bottom: 2px solid #e74c3c;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .stat {
-            background: rgba(231, 76, 60, 0.15);
-            padding: 6px 15px;
-            border-radius: 30px;
-            font-size: 14px;
-            font-weight: bold;
-        }
-
-        .stat span {
-            color: #e74c3c;
-            font-weight: bold;
-        }
-
-        /* الحاوية الرئيسية */
-        .pixel-wall {
-            display: grid;
-            grid-template-columns: repeat(100, 1fr);
-            gap: 1px;
-            background: #222;
-            padding: 20px;
-            max-width: 100%;
-            overflow-x: auto;
-        }
-
-        /* البكسل الواحد */
-        .pixel {
-            aspect-ratio: 1 / 1;
-            background: #2d2d2d;
-            border: 1px solid #3d3d3d;
-            transition: all 0.2s ease;
-            cursor: pointer;
-            position: relative;
-        }
-
-        .pixel:hover {
-            background: #e74c3c;
-            transform: scale(1.05);
-            z-index: 10;
-            box-shadow: 0 0 10px rgba(231, 76, 60, 0.7);
-        }
-
-        .pixel.sold {
-            background-size: cover;
-            background-position: center;
-            border: 1px solid #e74c3c;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+        body { background: linear-gradient(135deg, #0a2e0a 0%, #1a1a2e 100%); min-height: 100vh; font-family: 'Tajawal', 'Cairo', monospace; color: #fff; }
+        
+        /* الهيدر */
+        .header { text-align: center; padding: 30px 20px 20px; background: rgba(0,0,0,0.5); }
+        .header h1 { font-size: 32px; color: #e74c3c; letter-spacing: 2px; }
+        .header p { font-size: 18px; margin-top: 10px; opacity: 0.9; }
+        
+        /* شريط الأهداف */
+        .goal-bar { background: rgba(0,0,0,0.7); padding: 15px 20px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px; border-bottom: 2px solid #e74c3c; }
+        .goal-stat { text-align: center; flex: 1; min-width: 120px; }
+        .goal-stat .number { font-size: 28px; font-weight: bold; color: #e74c3c; }
+        .goal-stat .label { font-size: 14px; opacity: 0.8; }
+        
+        /* الجدار */
+        .pixel-wall { display: grid; grid-template-columns: repeat(100, 1fr); gap: 1px; background: #222; padding: 20px; max-width: 100%; overflow-x: auto; }
+        .pixel { aspect-ratio: 1/1; background: #2d2d2d; border: 1px solid #3d3d3d; transition: 0.2s; cursor: pointer; }
+        .pixel:hover { background: #e74c3c; transform: scale(1.05); z-index: 10; box-shadow: 0 0 10px rgba(231,76,60,0.7); }
+        .pixel.sold { background-size: cover; background-position: center; border: 1px solid #e74c3c; }
+        
+        /* رسالة الجدار */
+        .wall-message { text-align: center; padding: 20px; background: rgba(231,76,60,0.1); margin: 10px 20px; border-radius: 15px; }
+        .wall-message p { font-size: 16px; }
+        
         /* الفورم */
-        .purchase-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.95);
-            backdrop-filter: blur(8px);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background: linear-gradient(135deg, #1a2e1a, #0f1a0f);
-            padding: 30px;
-            border-radius: 20px;
-            border: 2px solid #e74c3c;
-            width: 90%;
-            max-width: 450px;
-            text-align: center;
-        }
-
-        .modal-content h2 {
-            color: #e74c3c;
-            margin-bottom: 20px;
-            font-size: 28px;
-        }
-
-        .modal-content .palestine-flag {
-            font-size: 40px;
-            margin-bottom: 10px;
-        }
-
-        .modal-content input {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            background: #0f1a0f;
-            border: 1px solid #e74c3c;
-            border-radius: 10px;
-            color: #fff;
-            font-size: 16px;
-            text-align: center;
-        }
-
-        .modal-content button {
-            background: #e74c3c;
-            color: #fff;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 10px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 15px;
-            font-size: 16px;
-            transition: 0.3s;
-        }
-
-        .modal-content button:hover {
-            background: #c0392b;
-            transform: scale(1.02);
-        }
-
-        .close-modal {
-            background: #555 !important;
-        }
-
-        /* قسم التواصل الاجتماعي */
-        .social-links {
-            text-align: center;
-            padding: 20px;
-            background: rgba(0,0,0,0.8);
-            border-top: 1px solid #e74c3c;
-            margin-top: 20px;
-        }
-
-        .social-links h3 {
-            color: #e74c3c;
-            margin-bottom: 15px;
-        }
-
-        .social-icons {
-            display: flex;
-            justify-content: center;
-            gap: 25px;
-            flex-wrap: wrap;
-        }
-
-        .social-icons a {
-            color: #fff;
-            text-decoration: none;
-            font-size: 18px;
-            padding: 8px 20px;
-            border-radius: 30px;
-            transition: 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .social-icons a:hover {
-            background: #e74c3c;
-            transform: translateY(-3px);
-        }
-
-        .support-palestine {
-            text-align: center;
-            padding: 15px;
-            background: linear-gradient(90deg, #e74c3c, #e67e22);
-            color: #fff;
-            font-weight: bold;
-            font-size: 18px;
-        }
-
-        .support-palestine span {
-            font-size: 24px;
-            margin-right: 10px;
-        }
-
-        .loading {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #e74c3c;
-            color: #fff;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        @media (max-width: 768px) {
-            .pixel-wall { gap: 1px; }
-            .stat { font-size: 10px; padding: 4px 10px; }
-            .social-icons a { font-size: 14px; padding: 6px 12px; }
-        }
+        .purchase-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: linear-gradient(135deg, #1a2e1a, #0f1a0f); padding: 30px; border-radius: 20px; border: 2px solid #e74c3c; width: 90%; max-width: 450px; text-align: center; }
+        .modal-content h2 { color: #e74c3c; margin-bottom: 20px; }
+        .modal-content p { margin: 10px 0; }
+        .modal-content input { width: 100%; padding: 12px; margin: 10px 0; background: #0f1a0f; border: 1px solid #e74c3c; border-radius: 10px; color: #fff; font-size: 16px; text-align: center; }
+        .modal-content button { background: #e74c3c; color: #fff; border: none; padding: 12px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 15px; }
+        .modal-content button:hover { background: #c0392b; }
+        .close-modal { background: #555 !important; }
+        
+        /* روابط التواصل */
+        .social-section { text-align: center; padding: 30px 20px; background: rgba(0,0,0,0.8); border-top: 1px solid #e74c3c; margin-top: 20px; }
+        .social-section h3 { color: #e74c3c; margin-bottom: 20px; font-size: 22px; }
+        .social-icons { display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; }
+        .social-icons a { color: #fff; text-decoration: none; padding: 10px 25px; border-radius: 40px; transition: 0.3s; display: inline-flex; align-items: center; gap: 10px; font-size: 18px; background: rgba(255,255,255,0.1); }
+        .social-icons a:hover { background: #e74c3c; transform: translateY(-3px); }
+        
+        /* التذييل */
+        .footer { text-align: center; padding: 20px; background: #0a0a0a; font-size: 12px; opacity: 0.7; }
+        
+        .loading { position: fixed; bottom: 20px; right: 20px; background: #e74c3c; color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        
+        @media (max-width: 768px) { .pixel-wall { gap: 1px; } .header h1 { font-size: 24px; } .goal-stat .number { font-size: 20px; } .social-icons a { font-size: 14px; padding: 8px 16px; } }
     </style>
 </head>
 <body>
-    <div class="support-palestine">
-        <span>🇵🇸</span> دعم فلسطين - كل بكسل يساهم في إيصال الصوت <span>🇵🇸</span>
+
+    <!-- الهيدر -->
+    <div class="header">
+        <h1>🇵🇸 THE WALL OF SOLIDARITY 2026 🇵🇸</h1>
+        <p>مليون بكسل.. هدف واحد. خلد تضامنك في الجدارية الرقمية الكبرى</p>
     </div>
 
-    <div class="stats-bar">
-        <div class="stat">🎨 البكسلات المباعة: <span id="sold-count">0</span> / 10,000</div>
-        <div class="stat">💰 سعر البكسل: <span id="price">1</span> دولار فقط</div>
-        <div class="stat">⚡ الدعم عبر CryptoBot</div>
-    </div>
-
-    <div id="pixel-wall" class="pixel-wall"></div>
-
-    <div class="social-links">
-        <h3>📱 تابعنا على وسائل التواصل</h3>
-        <div class="social-icons">
-            <a href="https://discord.gg/your-invite" target="_blank">💬 ديسكورد</a>
-            <a href="https://instagram.com/your-username" target="_blank">📷 إنستقرام</a>
-            <a href="https://t.me/your-channel" target="_blank">📨 تلغرام</a>
-            <a href="https://twitter.com/your-username" target="_blank">🐦 تويتر</a>
+    <!-- شريط الأهداف -->
+    <div class="goal-bar">
+        <div class="goal-stat">
+            <div class="number" id="sold-count">0</div>
+            <div class="label">بكسل مباع</div>
+        </div>
+        <div class="goal-stat">
+            <div class="number">1,000,000</div>
+            <div class="label">هدف المليون</div>
+        </div>
+        <div class="goal-stat">
+            <div class="number">1$</div>
+            <div class="label">سعر البكسل</div>
         </div>
     </div>
 
+    <!-- رسالة الجدار -->
+    <div class="wall-message">
+        <p>🎯 أصواتنا هي القوة. هدفنا الوصول إلى مليون بكسل ليسمع العالم صوت تضامننا. بكسل واحد منك، يقربنا من المليون.</p>
+    </div>
+
+    <!-- الجدار -->
+    <div id="pixel-wall" class="pixel-wall"></div>
+
+    <!-- روابط التواصل -->
+    <div class="social-section">
+        <h3>📢 انضم لمجتمعنا وشارك في الرحلة</h3>
+        <div class="social-icons">
+            <a href="https://instagram.com/yourusername" target="_blank">📷 إنستقرام</a>
+            <a href="https://discord.gg/yourinvite" target="_blank">💬 ديسكورد</a>
+            <a href="https://t.me/yourchannel" target="_blank">📨 تليجرام</a>
+        </div>
+    </div>
+
+    <!-- التذييل -->
+    <div class="footer">
+        The Wall of Solidarity 2026 - حيث تلتقي القلوب لتبني جدار المستحيل
+    </div>
+
+    <!-- نافذة الشراء -->
     <div id="purchase-modal" class="purchase-modal">
         <div class="modal-content">
-            <div class="palestine-flag">🇵🇸</div>
-            <h2>🇵🇸 اشتر هذا البكسل</h2>
-            <p>الموقع: <strong id="pixel-coords"></strong></p>
-            <p>السعر: <strong id="pixel-price">1</strong> دولار فقط</p>
+            <div style="font-size: 40px;">🇵🇸</div>
+            <h2>ضع بصمتك الآن</h2>
+            <p>رابط موقعك سيبقى خالداً هنا حتى نصل للمليون صوت</p>
+            <p><strong>بكسلك هو دعمك</strong></p>
+            <p>الموقع: <strong id="pixel-coords"></strong> | السعر: <strong>1$</strong></p>
             <input type="text" id="owner-name" placeholder="اسمك أو معرفك" required>
-            <input type="url" id="owner-url" placeholder="رابط حسابك (Instagram, Discord, Telegram...)" required>
+            <input type="url" id="owner-url" placeholder="رابط حسابك (Instagram, Discord, Telegram)" required>
             <button id="confirm-purchase">✅ تأكيد الشراء</button>
             <button id="close-modal" class="close-modal">❌ إلغاء</button>
         </div>
@@ -262,45 +119,30 @@
     <div class="loading" id="loading" style="display: none;">⏳ جاري المعالجة...</div>
 
     <script>
-        // ===================== الإعدادات =====================
         const API_URL = "https://thewallofsolidarity20261.onrender.com";
-        
-        // ===================== المتغيرات =====================
         let selectedPixel = null;
         let allPixels = [];
         let soldPixels = new Set();
 
-        // ===================== إنشاء الجدار =====================
         function createWall() {
             const wall = document.getElementById('pixel-wall');
             wall.innerHTML = '';
-            
             for (let y = 0; y < 100; y++) {
                 for (let x = 0; x < 100; x++) {
                     const pixel = document.createElement('div');
                     pixel.className = 'pixel';
                     pixel.dataset.x = x;
                     pixel.dataset.y = y;
-                    
                     const sold = soldPixels.has(`${x},${y}`);
                     if (sold) {
                         pixel.classList.add('sold');
                         const soldData = allPixels.find(p => p.x === x && p.y === y);
-                        if (soldData && soldData.url) {
-                            pixel.style.backgroundImage = `url('https://favicon.yandex.net/favicon/${soldData.url}')`;
-                            pixel.style.backgroundSize = 'cover';
-                        }
+                        if (soldData && soldData.url) pixel.style.backgroundImage = `url('https://favicon.yandex.net/favicon/${soldData.url}')`;
                     }
-                    
                     pixel.onclick = () => openPurchase(x, y, sold);
                     wall.appendChild(pixel);
                 }
             }
-            
-            updateStats();
-        }
-
-        function updateStats() {
             document.getElementById('sold-count').innerText = soldPixels.size;
         }
 
@@ -312,17 +154,11 @@
                 soldPixels.clear();
                 allPixels.forEach(p => soldPixels.add(`${p.x},${p.y}`));
                 createWall();
-            } catch (error) {
-                console.error('Error fetching pixels:', error);
-                createWall();
-            }
+            } catch (error) { createWall(); }
         }
 
         function openPurchase(x, y, isSold) {
-            if (isSold) {
-                alert('❌ هذا البكسل تم بيعه بالفعل!');
-                return;
-            }
+            if (isSold) { alert('❌ هذا البكسل تم بيعه بالفعل!'); return; }
             selectedPixel = { x, y };
             document.getElementById('pixel-coords').innerText = `(${x}, ${y})`;
             document.getElementById('purchase-modal').style.display = 'flex';
@@ -331,21 +167,22 @@
         async function createInvoice(owner, url) {
             const loading = document.getElementById('loading');
             loading.style.display = 'block';
-            
             try {
                 const response = await fetch(`${API_URL}/create-invoice`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        x: selectedPixel.x,
-                        y: selectedPixel.y,
-                        owner: owner,
-                        url: url
-                    })
+                    body: JSON.stringify({ x: selectedPixel.x, y: selectedPixel.y, owner: owner, url: url })
                 });
-                
                 const data = await response.json();
-                
+                if (data.free === true) {
+                    loading.style.display = 'none';
+                    document.getElementById('purchase-modal').style.display = 'none';
+                    alert('🎉 تهانينا! لقد حصلت على بكسل مجاني!');
+                    fetchSoldPixels();
+                    document.getElementById('owner-name').value = '';
+                    document.getElementById('owner-url').value = '';
+                    return;
+                }
                 if (data.pay_url) {
                     loading.style.display = 'none';
                     document.getElementById('purchase-modal').style.display = 'none';
@@ -353,11 +190,11 @@
                     checkPaymentStatus(data.invoice_id);
                 } else {
                     loading.style.display = 'none';
-                    alert('❌ فشل إنشاء الفاتورة. حاول مرة أخرى.');
+                    alert('❌ فشل إنشاء الفاتورة.');
                 }
             } catch (error) {
                 loading.style.display = 'none';
-                alert('❌ خطأ في الشبكة: ' + error.message);
+                alert('❌ خطأ في الشبكة');
             }
         }
 
@@ -365,66 +202,40 @@
             const loading = document.getElementById('loading');
             loading.style.display = 'block';
             loading.innerText = '⏳ في انتظار تأكيد الدفع...';
-            
             let attempts = 0;
-            const maxAttempts = 60;
-            
             const interval = setInterval(async () => {
                 attempts++;
                 try {
                     const response = await fetch(`${API_URL}/check-invoice/${invoiceId}`);
                     const data = await response.json();
-                    
                     if (data.status === 'paid') {
                         clearInterval(interval);
                         loading.style.display = 'none';
-                        loading.innerText = '⏳ جاري المعالجة...';
-                        alert('✅ تم تأكيد الدفع! سيظهر بكسل قريباً على الجدار.');
+                        alert('✅ تم تأكيد الدفع! سيظهر بكسل على الجدار.');
                         fetchSoldPixels();
-                        document.getElementById('owner-name').value = '';
-                        document.getElementById('owner-url').value = '';
-                    } else if (attempts >= maxAttempts) {
+                    } else if (attempts >= 60) {
                         clearInterval(interval);
                         loading.style.display = 'none';
-                        loading.innerText = '⏳ جاري المعالجة...';
-                        alert('⚠️ لم يتم تأكيد الدفع خلال 5 دقائق. تواصل مع الدعم.');
+                        alert('⚠️ لم يتم تأكيد الدفع خلال 5 دقائق.');
                     }
-                } catch (error) {
-                    console.error('Check status error:', error);
-                }
+                } catch (error) { console.error(error); }
             }, 5000);
         }
 
         document.getElementById('confirm-purchase').onclick = () => {
             const owner = document.getElementById('owner-name').value.trim();
             const url = document.getElementById('owner-url').value.trim();
-            
-            if (!owner) {
-                alert('❌ الرجاء إدخال اسمك');
-                return;
-            }
-            if (!url) {
-                alert('❌ الرجاء إدخال رابط حسابك');
-                return;
-            }
-            
+            if (!owner) { alert('❌ الرجاء إدخال اسمك'); return; }
+            if (!url) { alert('❌ الرجاء إدخال رابط حسابك'); return; }
             createInvoice(owner, url);
         };
-        
         document.getElementById('close-modal').onclick = () => {
             document.getElementById('purchase-modal').style.display = 'none';
             document.getElementById('owner-name').value = '';
             document.getElementById('owner-url').value = '';
             selectedPixel = null;
         };
-        
-        window.onclick = (e) => {
-            const modal = document.getElementById('purchase-modal');
-            if (e.target === modal) {
-                modal.style.display = 'none';
-            }
-        };
-        
+        window.onclick = (e) => { if (e.target === document.getElementById('purchase-modal')) document.getElementById('purchase-modal').style.display = 'none'; };
         fetchSoldPixels();
     </script>
 </body>
