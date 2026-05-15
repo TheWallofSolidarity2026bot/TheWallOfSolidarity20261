@@ -6,319 +6,239 @@
     <title id="page-title">جدار التضامن 2026 - فلسطين 🇵🇸</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
-        body { background: linear-gradient(135deg, #0a2e0a 0%, #1a1a2e 100%); min-height: 100vh; font-family: 'Tajawal', 'Cairo', sans-serif; color: #fff; transition: 0.3s; }
-        
-        .lang-switch { position: fixed; top: 20px; left: 20px; z-index: 2000; background: #e74c3c; color: #fff; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: 0.3s; }
-        .lang-switch:hover { background: #c0392b; transform: scale(1.02); }
-
+        body { background: linear-gradient(135deg, #0a2e0a 0%, #1a1a2e 100%); min-height: 100vh; font-family: 'Tajawal', 'Cairo', sans-serif; color: #fff; }
+        .lang-switch { position: fixed; top: 20px; left: 20px; z-index: 2000; background: #e74c3c; color: #fff; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-weight: bold; }
         .header { text-align: center; padding: 40px 20px 20px; background: rgba(0,0,0,0.5); }
-        .header h1 { font-size: 32px; color: #e74c3c; letter-spacing: 2px; margin-bottom: 10px; }
-        .header p { font-size: 18px; opacity: 0.9; }
-        
+        .header h1 { font-size: 32px; color: #e74c3c; }
         .goal-bar { background: rgba(0,0,0,0.7); padding: 15px 20px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px; border-bottom: 2px solid #e74c3c; }
-        .goal-stat { text-align: center; flex: 1; min-width: 120px; }
+        .goal-stat { text-align: center; flex: 1; }
         .goal-stat .number { font-size: 28px; font-weight: bold; color: #e74c3c; }
-        .goal-stat .label { font-size: 14px; opacity: 0.8; }
-        
-        .pixel-wall { display: grid; grid-template-columns: repeat(100, 1fr); gap: 1px; background: #222; padding: 20px; max-width: 100%; overflow-x: auto; margin: 20px 0; }
-        .pixel { aspect-ratio: 1/1; background: #2d2d2d; border: 1px solid #3d3d3d; transition: 0.2s; cursor: pointer; }
-        .pixel:hover { background: #e74c3c; transform: scale(1.05); z-index: 10; box-shadow: 0 0 10px rgba(231,76,60,0.7); }
-        .pixel.sold { background: #e74c3c; border: 1px solid #ffd700; background-size: cover; background-position: center; }
-
-        .wall-message { text-align: center; padding: 20px; background: rgba(231,76,60,0.1); margin: 10px 20px; border-radius: 15px; line-height: 1.6; }
-        
-        .purchase-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: linear-gradient(135deg, #1a2e1a, #0f1a0f); padding: 30px; border-radius: 20px; border: 2px solid #e74c3c; width: 90%; max-width: 450px; text-align: center; }
-        .modal-content h2 { color: #e74c3c; margin-bottom: 20px; }
-        .modal-content input { width: 100%; padding: 12px; margin: 10px 0; background: #0f1a0f; border: 1px solid #e74c3c; border-radius: 10px; color: #fff; font-size: 16px; text-align: center; }
-        .modal-content button { background: #e74c3c; color: #fff; border: none; padding: 12px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 15px; width: 100%; transition: 0.3s; }
-        .modal-content button:hover { background: #c0392b; }
+        .pixel-wall { display: grid; grid-template-columns: repeat(100, 1fr); gap: 1px; background: #222; padding: 20px; overflow-x: auto; }
+        .pixel { aspect-ratio: 1/1; background: #2d2d2d; border: 1px solid #3d3d3d; cursor: pointer; transition: 0.2s; }
+        .pixel:hover { background: #e74c3c; transform: scale(1.05); }
+        .pixel.sold { background: #e74c3c; border-color: #ffd700; background-size: cover; }
+        .wall-message { text-align: center; padding: 20px; background: rgba(231,76,60,0.1); margin: 10px 20px; border-radius: 15px; }
+        .purchase-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: #1a2e1a; padding: 30px; border-radius: 20px; border: 2px solid #e74c3c; width: 90%; max-width: 450px; text-align: center; }
+        .modal-content input { width: 100%; padding: 12px; margin: 10px 0; background: #0f1a0f; border: 1px solid #e74c3c; border-radius: 10px; color: #fff; }
+        .modal-content button { background: #e74c3c; color: #fff; border: none; padding: 12px; border-radius: 10px; cursor: pointer; margin-top: 10px; width: 100%; }
         .close-btn { background: #555 !important; }
-        .close-btn:hover { background: #444 !important; }
-
-        .social-section { text-align: center; padding: 40px 20px; background: rgba(0,0,0,0.8); border-top: 1px solid #e74c3c; }
-        .social-icons { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 20px; }
-        .social-icons a { color: #fff; text-decoration: none; padding: 10px 25px; border-radius: 40px; background: rgba(255,255,255,0.1); transition: 0.3s; display: inline-flex; align-items: center; gap: 8px; font-size: 16px; }
-        .social-icons a:hover { background: #e74c3c; transform: translateY(-3px); }
-
-        .footer { text-align: center; padding: 20px; background: #0a0a0a; font-size: 12px; opacity: 0.7; }
-        .loading { position: fixed; bottom: 20px; right: 20px; background: #e74c3c; color: #fff; padding: 10px 20px; border-radius: 30px; font-weight: bold; display: none; z-index: 1000; }
-        
-        @media (max-width: 768px) { .pixel-wall { gap: 1px; } .header h1 { font-size: 24px; } .goal-stat .number { font-size: 20px; } .social-icons a { font-size: 12px; padding: 6px 12px; } }
+        .social-section { text-align: center; padding: 30px; background: rgba(0,0,0,0.8); }
+        .social-icons { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 15px; }
+        .social-icons a { color: #fff; text-decoration: none; padding: 8px 20px; border-radius: 30px; background: rgba(255,255,255,0.1); }
+        .social-icons a:hover { background: #e74c3c; }
+        .footer { text-align: center; padding: 15px; background: #0a0a0a; font-size: 12px; opacity: 0.7; }
+        .loading { position: fixed; bottom: 20px; right: 20px; background: #e74c3c; padding: 8px 16px; border-radius: 20px; display: none; }
+        @media (max-width: 768px) { .header h1 { font-size: 24px; } .goal-stat .number { font-size: 20px; } }
     </style>
 </head>
 <body>
 
-    <button class="lang-switch" onclick="toggleLanguage()" id="lang-btn">English</button>
+<button class="lang-switch" onclick="toggleLanguage()" id="lang-btn">English</button>
 
-    <div class="header">
-        <h1 id="main-title">🇵🇸 THE WALL OF SOLIDARITY 2026 🇵🇸</h1>
-        <p id="sub-title">مليون بكسل.. هدف واحد. خلد تضامنك في الجدارية الرقمية الكبرى</p>
+<div class="header">
+    <h1 id="main-title">🇵🇸 THE WALL OF SOLIDARITY 2026 🇵🇸</h1>
+    <p id="sub-title">مليون بكسل.. هدف واحد. خلد تضامنك في الجدارية الرقمية الكبرى</p>
+</div>
+
+<div class="goal-bar">
+    <div class="goal-stat"><div class="number" id="sold-count">0</div><div id="label-sold" class="label">بكسل مباع</div></div>
+    <div class="goal-stat"><div class="number">1,000,000</div><div id="label-target" class="label">هدف المليون</div></div>
+    <div class="goal-stat"><div class="number">1$</div><div id="label-price" class="label">سعر البكسل</div></div>
+</div>
+
+<div class="wall-message"><p id="desc-text">🎯 أصواتنا هي القوة. هدفنا الوصول إلى مليون بكسل ليسمع العالم صوت تضامننا. بكسل واحد منك، يقربنا من المليون.</p></div>
+
+<div id="pixel-wall" class="pixel-wall"></div>
+
+<div class="social-section">
+    <h3 id="social-title">📢 انضم لمجتمعنا وشارك في الرحلة</h3>
+    <div class="social-icons">
+        <a href="https://instagram.com/yourusername" target="_blank">📷 Instagram</a>
+        <a href="https://discord.gg/yourinvite" target="_blank">💬 Discord</a>
+        <a href="https://t.me/yourchannel" target="_blank">📨 Telegram</a>
     </div>
+</div>
 
-    <div class="goal-bar">
-        <div class="goal-stat"><div class="number" id="sold-count">0</div><div id="label-sold" class="label">بكسل مباع</div></div>
-        <div class="goal-stat"><div class="number">1,000,000</div><div id="label-target" class="label">الهدف النهائي</div></div>
-        <div class="goal-stat"><div class="number">1$</div><div id="label-price" class="label">سعر البكسل</div></div>
+<div class="footer" id="footer-text">The Wall of Solidarity 2026 - حيث تلتقي القلوب لتبني جدار المستحيل</div>
+
+<div id="purchase-modal" class="purchase-modal">
+    <div class="modal-content">
+        <div style="font-size: 40px;">🇵🇸</div>
+        <h2 id="modal-title">ضع بصمتك الآن</h2>
+        <p id="modal-desc">رابط موقعك سيبقى خالداً هنا حتى نصل للمليون صوت</p>
+        <input type="text" id="owner-name" placeholder="اسمك أو معرفك">
+        <input type="url" id="owner-url" placeholder="رابط حسابك">
+        <button id="confirm-purchase">✅ تأكيد الشراء</button>
+        <button onclick="closeModal()" class="close-btn" id="cancel-btn">❌ إلغاء</button>
     </div>
+</div>
 
-    <div class="wall-message">
-        <p id="desc-text">🎯 أصواتنا هي القوة. هدفنا الوصول إلى مليون بكسل ليسمع العالم صوت تضامننا. بكسل واحد منك، يقربنا من المليون.</p>
-    </div>
-    
-    <div id="pixel-wall" class="pixel-wall"></div>
-    
-    <div class="social-section">
-        <h3 id="social-title">📢 انضم لمجتمعنا وشارك في الرحلة</h3>
-        <div class="social-icons">
-            <a href="https://instagram.com/yourusername" target="_blank">📷 Instagram</a>
-            <a href="https://discord.gg/yourinvite" target="_blank">💬 Discord</a>
-            <a href="https://t.me/yourchannel" target="_blank">📨 Telegram</a>
-        </div>
-    </div>
-    
-    <div class="footer" id="footer-text">The Wall of Solidarity 2026 - حيث تلتقي القلوب لتبني جدار المستحيل</div>
+<div class="loading" id="loading">⏳ جاري المعالجة...</div>
 
-    <div id="purchase-modal" class="purchase-modal">
-        <div class="modal-content">
-            <div style="font-size: 40px;">🇵🇸</div>
-            <h2 id="modal-title">ضع بصمتك الآن</h2>
-            <p id="modal-desc">رابط موقعك سيبقى خالداً هنا حتى نصل للمليون صوت</p>
-            <p id="modal-price"><strong>1$</strong></p>
-            <input type="text" id="owner-name" placeholder="اسمك أو معرفك" required>
-            <input type="url" id="owner-url" placeholder="رابط حسابك (Instagram, Discord, Telegram)" required>
-            <button id="confirm-purchase">✅ تأكيد الشراء</button>
-            <button onclick="closeModal()" class="close-btn" id="cancel-btn">❌ إلغاء</button>
-        </div>
-    </div>
+<script>
+    const SERVER_URL = "https://thewallofsolidarity20261-production.up.railway.app";
+    let currentLang = 'ar';
+    let selectedPixel = null;
+    let allPixels = [];
+    let soldPixels = new Set();
 
-    <div class="loading" id="loading">⏳ جاري المعالجة...</div>
-
-    <script>
-        // رابط السيرفر على Railway
-        const SERVER_URL = "https://thewallofsolidarity20261-production.up.railway.app";
-        let currentLang = 'ar';
-        let selectedPixel = null;
-        let allPixels = [];
-        let soldPixels = new Set();
-
-        // ✅ الترجمة الكاملة (العربية والإنجليزية)
-        const translations = {
-            ar: {
-                title: "جدار التضامن 2026 - فلسطين 🇵🇸",
-                mainTitle: "🇵🇸 THE WALL OF SOLIDARITY 2026 🇵🇸",
-                subTitle: "مليون بكسل.. هدف واحد. خلد تضامنك في الجدارية الرقمية الكبرى",
-                sold: "بكسل مباع",
-                target: "هدف المليون",
-                price: "سعر البكسل",
-                desc: "🎯 أصواتنا هي القوة. هدفنا الوصول إلى مليون بكسل ليسمع العالم صوت تضامننا. بكسل واحد منك، يقربنا من المليون.",
-                social: "📢 انضم لمجتمعنا وشارك في الرحلة",
-                footer: "The Wall of Solidarity 2026 - حيث تلتقي القلوب لتبني جدار المستحيل",
-                modalTitle: "ضع بصمتك الآن",
-                modalDesc: "رابط موقعك سيبقى خالداً هنا حتى نصل للمليون صوت",
-                confirm: "✅ تأكيد الشراء",
-                cancel: "❌ إلغاء",
-                langBtn: "English",
-                soldAlert: "❌ هذا البكسل تم بيعه بالفعل!",
-                fillFields: "❌ الرجاء إدخال اسمك ورابط حسابك",
-                networkError: "❌ خطأ في الشبكة. تأكد من اتصالك بالإنترنت",
-                invoiceError: "❌ فشل إنشاء الفاتورة. حاول مرة أخرى",
-                freePixel: "🎉 تهانينا! لقد حصلت على بكسل مجاني!",
-                paymentSuccess: "✅ تم تأكيد الدفع! سيظهر بكسل على الجدار.",
-                paymentTimeout: "⚠️ لم يتم تأكيد الدفع خلال 5 دقائق."
-            },
-            en: {
-                title: "The Wall of Solidarity 2026 - Palestine 🇵🇸",
-                mainTitle: "🇵🇸 THE WALL OF SOLIDARITY 2026 🇵🇸",
-                subTitle: "One Million Pixels.. One Goal. Immortalize your solidarity in the digital mural.",
-                sold: "Pixels Sold",
-                target: "Million Goal",
-                price: "Price per Pixel",
-                desc: "🎯 Our voices are our power. Our goal is to reach 1,000,000 pixels so the world hears our solidarity. One pixel from you brings us closer to the million.",
-                social: "📢 Join our community and share the journey",
-                footer: "The Wall of Solidarity 2026 - where hearts meet to build the wall of the impossible",
-                modalTitle: "Leave Your Mark Now",
-                modalDesc: "Your link will stay here forever until we reach the million voices.",
-                confirm: "✅ Confirm Purchase",
-                cancel: "❌ Cancel",
-                langBtn: "العربية",
-                soldAlert: "❌ This pixel is already sold!",
-                fillFields: "❌ Please enter your name and URL",
-                networkError: "❌ Network error. Please check your connection",
-                invoiceError: "❌ Failed to create invoice. Please try again",
-                freePixel: "🎉 Congratulations! You got a free pixel!",
-                paymentSuccess: "✅ Payment confirmed! Your pixel will appear on the wall.",
-                paymentTimeout: "⚠️ Payment not confirmed within 5 minutes."
-            }
-        };
-
-        // ✅ تبديل اللغة
-        function toggleLanguage() {
-            currentLang = currentLang === 'ar' ? 'en' : 'ar';
-            const lang = translations[currentLang];
-            
-            document.getElementById('main-html').dir = currentLang === 'ar' ? 'rtl' : 'ltr';
-            document.getElementById('main-html').lang = currentLang;
-            
-            document.getElementById('page-title').innerText = lang.title;
-            document.getElementById('main-title').innerText = lang.mainTitle;
-            document.getElementById('sub-title').innerText = lang.subTitle;
-            document.getElementById('label-sold').innerText = lang.sold;
-            document.getElementById('label-target').innerText = lang.target;
-            document.getElementById('label-price').innerText = lang.price;
-            document.getElementById('desc-text').innerText = lang.desc;
-            document.getElementById('social-title').innerText = lang.social;
-            document.getElementById('footer-text').innerText = lang.footer;
-            document.getElementById('modal-title').innerText = lang.modalTitle;
-            document.getElementById('modal-desc').innerText = lang.modalDesc;
-            document.getElementById('confirm-purchase').innerText = lang.confirm;
-            document.getElementById('cancel-btn').innerText = lang.cancel;
-            document.getElementById('lang-btn').innerText = lang.langBtn;
+    const translations = {
+        ar: {
+            title: "جدار التضامن 2026 - فلسطين 🇵🇸", mainTitle: "🇵🇸 THE WALL OF SOLIDARITY 2026 🇵🇸",
+            subTitle: "مليون بكسل.. هدف واحد. خلد تضامنك في الجدارية الرقمية الكبرى",
+            sold: "بكسل مباع", target: "هدف المليون", price: "سعر البكسل",
+            desc: "🎯 أصواتنا هي القوة. هدفنا الوصول إلى مليون بكسل ليسمع العالم صوت تضامننا.",
+            social: "📢 انضم لمجتمعنا وشارك في الرحلة",
+            footer: "The Wall of Solidarity 2026 - حيث تلتقي القلوب لتبني جدار المستحيل",
+            modalTitle: "ضع بصمتك الآن", modalDesc: "رابط موقعك سيبقى خالداً هنا حتى نصل للمليون صوت",
+            confirm: "✅ تأكيد الشراء", cancel: "❌ إلغاء", langBtn: "English",
+            soldAlert: "❌ هذا البكسل تم بيعه بالفعل!", fillFields: "❌ الرجاء إدخال اسمك ورابط حسابك",
+            freePixel: "🎉 تهانينا! لقد حصلت على بكسل مجاني!", paymentSuccess: "✅ تم تأكيد الدفع!",
+            processing: "⏳ جاري المعالجة...", waiting: "⏳ في انتظار تأكيد الدفع..."
+        },
+        en: {
+            title: "The Wall of Solidarity 2026 - Palestine 🇵🇸", mainTitle: "🇵🇸 THE WALL OF SOLIDARITY 2026 🇵🇸",
+            subTitle: "One Million Pixels.. One Goal. Immortalize your solidarity.",
+            sold: "Pixels Sold", target: "Million Goal", price: "Price per Pixel",
+            desc: "🎯 Our voices are our power. One pixel from you brings us closer.",
+            social: "📢 Join our community and share the journey",
+            footer: "The Wall of Solidarity 2026 - where hearts meet to build the impossible",
+            modalTitle: "Leave Your Mark Now", modalDesc: "Your link will stay here forever.",
+            confirm: "✅ Confirm Purchase", cancel: "❌ Cancel", langBtn: "العربية",
+            soldAlert: "❌ This pixel is already sold!", fillFields: "❌ Please enter your name and URL",
+            freePixel: "🎉 Congratulations! You got a free pixel!", paymentSuccess: "✅ Payment confirmed!",
+            processing: "⏳ Processing...", waiting: "⏳ Waiting for payment confirmation..."
         }
+    };
 
-        function closeModal() {
-            document.getElementById('purchase-modal').style.display = 'none';
-            document.getElementById('owner-name').value = '';
-            document.getElementById('owner-url').value = '';
-            selectedPixel = null;
-        }
+    function toggleLanguage() {
+        currentLang = currentLang === 'ar' ? 'en' : 'ar';
+        const t = translations[currentLang];
+        document.getElementById('main-html').dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+        document.getElementById('main-html').lang = currentLang;
+        document.getElementById('page-title').innerText = t.title;
+        document.getElementById('main-title').innerText = t.mainTitle;
+        document.getElementById('sub-title').innerText = t.subTitle;
+        document.getElementById('label-sold').innerText = t.sold;
+        document.getElementById('label-target').innerText = t.target;
+        document.getElementById('label-price').innerText = t.price;
+        document.getElementById('desc-text').innerText = t.desc;
+        document.getElementById('social-title').innerText = t.social;
+        document.getElementById('footer-text').innerText = t.footer;
+        document.getElementById('modal-title').innerText = t.modalTitle;
+        document.getElementById('modal-desc').innerText = t.modalDesc;
+        document.getElementById('confirm-purchase').innerText = t.confirm;
+        document.getElementById('cancel-btn').innerText = t.cancel;
+        document.getElementById('lang-btn').innerText = t.langBtn;
+    }
 
-        // ✅ بناء الجدار
-        function createWall() {
-            const wall = document.getElementById('pixel-wall');
-            if (!wall) return;
-            wall.innerHTML = '';
-            for (let y = 0; y < 100; y++) {
-                for (let x = 0; x < 100; x++) {
-                    const pixel = document.createElement('div');
-                    pixel.className = 'pixel';
-                    if (soldPixels.has(`${x},${y}`)) {
-                        pixel.classList.add('sold');
-                        const soldData = allPixels.find(p => p.x === x && p.y === y);
-                        if (soldData && soldData.url) {
-                            pixel.style.backgroundImage = `url('https://favicon.yandex.net/favicon/${soldData.url}')`;
-                            pixel.style.backgroundSize = 'cover';
-                        }
-                    }
-                    pixel.onclick = () => openPurchase(x, y);
-                    wall.appendChild(pixel);
+    function closeModal() {
+        document.getElementById('purchase-modal').style.display = 'none';
+        document.getElementById('owner-name').value = '';
+        document.getElementById('owner-url').value = '';
+    }
+
+    function createWall() {
+        const wall = document.getElementById('pixel-wall');
+        wall.innerHTML = '';
+        for (let y = 0; y < 100; y++) {
+            for (let x = 0; x < 100; x++) {
+                const pixel = document.createElement('div');
+                pixel.className = 'pixel' + (soldPixels.has(`${x},${y}`) ? ' sold' : '');
+                if (soldPixels.has(`${x},${y}`)) {
+                    const sold = allPixels.find(p => p.x === x && p.y === y);
+                    if (sold && sold.url) pixel.style.backgroundImage = `url('https://favicon.yandex.net/favicon/${sold.url}')`;
                 }
-            }
-            document.getElementById('sold-count').innerText = soldPixels.size;
-        }
-
-        // ✅ جلب البكسلات المباعة من السيرفر
-        async function fetchSoldPixels() {
-            try {
-                const response = await fetch(`${SERVER_URL}/pixels`);
-                const data = await response.json();
-                allPixels = data.pixels || [];
-                soldPixels.clear();
-                allPixels.forEach(p => soldPixels.add(`${p.x},${p.y}`));
-                createWall();
-            } catch (error) {
-                console.error("Error fetching pixels:", error);
-                createWall();
+                pixel.onclick = () => openPurchase(x, y);
+                wall.appendChild(pixel);
             }
         }
+        document.getElementById('sold-count').innerText = soldPixels.size;
+    }
 
-        function openPurchase(x, y) {
-            const lang = translations[currentLang];
-            if (soldPixels.has(`${x},${y}`)) {
-                alert(lang.soldAlert);
+    async function fetchSoldPixels() {
+        try {
+            const res = await fetch(`${SERVER_URL}/pixels`);
+            const data = await res.json();
+            allPixels = data.pixels || [];
+            soldPixels.clear();
+            allPixels.forEach(p => soldPixels.add(`${p.x},${p.y}`));
+            createWall();
+        } catch(e) { createWall(); }
+    }
+
+    function openPurchase(x, y) {
+        if (soldPixels.has(`${x},${y}`)) { alert(translations[currentLang].soldAlert); return; }
+        selectedPixel = { x, y };
+        document.getElementById('purchase-modal').style.display = 'flex';
+    }
+
+    async function createInvoice(owner, url) {
+        const loading = document.getElementById('loading');
+        const t = translations[currentLang];
+        loading.style.display = 'block';
+        loading.innerText = t.processing;
+        try {
+            const res = await fetch(`${SERVER_URL}/create-invoice`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ x: selectedPixel.x, y: selectedPixel.y, owner, url })
+            });
+            const data = await res.json();
+            if (data.free) {
+                loading.style.display = 'none';
+                closeModal();
+                alert(t.freePixel);
+                fetchSoldPixels();
                 return;
             }
-            selectedPixel = { x, y };
-            document.getElementById('purchase-modal').style.display = 'flex';
+            if (data.pay_url) {
+                loading.style.display = 'none';
+                closeModal();
+                window.open(data.pay_url, '_blank');
+                checkPaymentStatus(data.invoice_id);
+            } else {
+                loading.style.display = 'none';
+                alert("Error creating invoice");
+            }
+        } catch(e) {
+            loading.style.display = 'none';
+            alert("Network error");
         }
+    }
 
-        // ✅ إنشاء فاتورة والدفع
-        async function createInvoice(owner, url) {
-            const loading = document.getElementById('loading');
-            const lang = translations[currentLang];
-            loading.style.display = 'block';
-            
+    async function checkPaymentStatus(invoiceId) {
+        const loading = document.getElementById('loading');
+        const t = translations[currentLang];
+        loading.style.display = 'block';
+        loading.innerText = t.waiting;
+        for (let i = 0; i < 60; i++) {
+            await new Promise(r => setTimeout(r, 5000));
             try {
-                const response = await fetch(`${SERVER_URL}/create-invoice`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ x: selectedPixel.x, y: selectedPixel.y, owner: owner, url: url })
-                });
-                
-                const data = await response.json();
-                
-                if (data.free === true) {
+                const res = await fetch(`${SERVER_URL}/check-invoice/${invoiceId}`);
+                const data = await res.json();
+                if (data.status === 'paid') {
                     loading.style.display = 'none';
-                    closeModal();
-                    alert(lang.freePixel);
+                    alert(t.paymentSuccess);
                     fetchSoldPixels();
                     return;
                 }
-                
-                if (data.pay_url) {
-                    loading.style.display = 'none';
-                    closeModal();
-                    window.open(data.pay_url, '_blank');
-                    checkPaymentStatus(data.invoice_id);
-                } else {
-                    loading.style.display = 'none';
-                    alert(lang.invoiceError);
-                }
-            } catch (error) {
-                loading.style.display = 'none';
-                alert(lang.networkError);
-            }
+            } catch(e) {}
         }
+        loading.style.display = 'none';
+        alert("Payment not confirmed within 5 minutes");
+    }
 
-        // ✅ التحقق من حالة الدفع
-        async function checkPaymentStatus(invoiceId) {
-            const loading = document.getElementById('loading');
-            const lang = translations[currentLang];
-            loading.style.display = 'block';
-            loading.innerText = '⏳ Waiting for payment confirmation...';
-            
-            let attempts = 0;
-            const interval = setInterval(async () => {
-                attempts++;
-                try {
-                    const response = await fetch(`${SERVER_URL}/check-invoice/${invoiceId}`);
-                    const data = await response.json();
-                    
-                    if (data.status === 'paid') {
-                        clearInterval(interval);
-                        loading.style.display = 'none';
-                        alert(lang.paymentSuccess);
-                        fetchSoldPixels();
-                    } else if (attempts >= 60) {
-                        clearInterval(interval);
-                        loading.style.display = 'none';
-                        alert(lang.paymentTimeout);
-                    }
-                } catch (error) {
-                    console.error("Check status error:", error);
-                }
-            }, 5000);
-        }
+    document.getElementById('confirm-purchase').onclick = () => {
+        const t = translations[currentLang];
+        const owner = document.getElementById('owner-name').value.trim();
+        const url = document.getElementById('owner-url').value.trim();
+        if (!owner || !url) { alert(t.fillFields); return; }
+        createInvoice(owner, url);
+    };
 
-        // ✅ أحداث الأزرار
-        document.getElementById('confirm-purchase').onclick = () => {
-            const lang = translations[currentLang];
-            const owner = document.getElementById('owner-name').value.trim();
-            const url = document.getElementById('owner-url').value.trim();
-            
-            if (!owner || !url) {
-                alert(lang.fillFields);
-                return;
-            }
-            createInvoice(owner, url);
-        };
-        
-        window.onclick = (e) => {
-            const modal = document.getElementById('purchase-modal');
-            if (e.target === modal) closeModal();
-        };
-        
-        fetchSoldPixels();
-    </script>
+    fetchSoldPixels();
+</script>
 </body>
 </html>
