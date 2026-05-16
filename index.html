@@ -3,292 +3,210 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>جدار التضامن 2026 - لوحة الرسم التضامنية 🇵🇸</title>
+    <title>جدار التضامن 2026 - مليون بكسل تفاعلي</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
-        body { background: linear-gradient(135deg, #0a2e0a 0%, #1a1a2e 100%); min-height: 100vh; font-family: 'Tajawal', 'Cairo', sans-serif; color: #fff; }
+        body { background: linear-gradient(135deg, #0a2e0a 0%, #1a1a2e 100%); min-height: 100vh; font-family: 'Tajawal', 'Cairo', sans-serif; color: #fff; overflow: hidden; }
         
-        .lang-switch { position: fixed; top: 20px; left: 20px; z-index: 2000; background: #e74c3c; color: #fff; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-weight: bold; z-index: 2001; }
+        /* واجهة التحكم */
+        .controls { position: fixed; top: 10px; left: 10px; right: 10px; z-index: 2000; display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; background: rgba(0,0,0,0.7); padding: 8px 12px; border-radius: 30px; backdrop-filter: blur(5px); }
+        .lang-switch { background: #e74c3c; border: none; padding: 5px 12px; border-radius: 20px; color: #fff; cursor: pointer; font-weight: bold; }
+        .stats { display: flex; gap: 15px; }
+        .stat { font-size: 12px; }
+        .stat span { color: #e74c3c; font-weight: bold; }
         
-        /* لوحة الألوان - 16 لوناً */
-        .color-palette { position: fixed; bottom: 20px; left: 20px; z-index: 2000; background: rgba(0,0,0,0.85); padding: 12px; border-radius: 20px; backdrop-filter: blur(10px); max-width: 90%; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-        .color { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.5); transition: 0.2s; }
-        .color:hover { transform: scale(1.15); border-color: #e74c3c; }
-        .color.active { border-color: #e74c3c; box-shadow: 0 0 12px #e74c3c; transform: scale(1.05); }
+        /* لوحة الألوان - أفقية قابلة للتمرير */
+        .color-palette { position: fixed; bottom: 10px; left: 10px; right: 10px; z-index: 2000; background: rgba(0,0,0,0.85); padding: 8px; border-radius: 30px; display: flex; gap: 6px; overflow-x: auto; justify-content: center; backdrop-filter: blur(5px); }
+        .color { width: 35px; height: 35px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.5); flex-shrink: 0; transition: 0.1s; }
+        .color.active { border-color: #e74c3c; box-shadow: 0 0 10px #e74c3c; transform: scale(1.05); }
         
-        .draw-info { position: fixed; bottom: 20px; right: 20px; z-index: 2000; background: rgba(0,0,0,0.8); padding: 10px 15px; border-radius: 15px; font-size: 12px; text-align: center; }
+        /* حاوية اللوحة (قابلة للتحريك والتكبير) */
+        .canvas-container { width: 100vw; height: 100vh; overflow: auto; cursor: grab; background: #111; }
+        .canvas-container:active { cursor: grabbing; }
         
-        .header { text-align: center; padding: 40px 20px 20px; background: rgba(0,0,0,0.5); }
-        .header h1 { font-size: 32px; color: #e74c3c; }
-        .goal-bar { background: rgba(0,0,0,0.7); padding: 15px 20px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px; border-bottom: 2px solid #e74c3c; }
-        .goal-stat { text-align: center; flex: 1; }
-        .goal-stat .number { font-size: 28px; font-weight: bold; color: #e74c3c; }
-        .pixel-wall { display: grid; grid-template-columns: repeat(100, 1fr); gap: 1px; background: #222; padding: 20px; overflow-x: auto; cursor: crosshair; }
-        .pixel { aspect-ratio: 1/1; background: #2d2d2d; border: 1px solid #3d3d3d; transition: 0.05s; }
-        .pixel.sold { background-size: cover; background-position: center; border: 1px solid #ffd700; }
-        .pixel.drawn { background-size: cover; background-position: center; }
-        .wall-message { text-align: center; padding: 20px; background: rgba(231,76,60,0.1); margin: 10px 20px; border-radius: 15px; }
-        .purchase-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: #1a2e1a; padding: 30px; border-radius: 20px; border: 2px solid #e74c3c; width: 90%; max-width: 450px; text-align: center; }
-        .modal-content input { width: 100%; padding: 12px; margin: 10px 0; background: #0f1a0f; border: 1px solid #e74c3c; border-radius: 10px; color: #fff; }
-        .modal-content button { background: #e74c3c; color: #fff; border: none; padding: 12px; border-radius: 10px; cursor: pointer; margin-top: 10px; width: 100%; }
-        .close-btn { background: #555 !important; }
-        .social-section { text-align: center; padding: 30px; background: rgba(0,0,0,0.8); }
-        .social-icons { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 15px; }
-        .social-icons a { color: #fff; text-decoration: none; padding: 8px 20px; border-radius: 30px; background: rgba(255,255,255,0.1); }
-        .social-icons a:hover { background: #e74c3c; }
-        .footer { text-align: center; padding: 15px; background: #0a0a0a; font-size: 12px; opacity: 0.7; }
-        .loading { position: fixed; bottom: 20px; right: 20px; background: #e74c3c; padding: 8px 16px; border-radius: 20px; display: none; z-index: 2000; }
-        @media (max-width: 768px) { .header h1 { font-size: 24px; } .color { width: 32px; height: 32px; } .color-palette { gap: 6px; padding: 8px; } }
+        /* اللوحة العملاقة (Canvas) */
+        #canvas { display: block; margin: 0; background: #2d2d2d; }
+        
+        /* مؤشر التحميل */
+        .loading { position: fixed; bottom: 20px; right: 20px; background: #e74c3c; padding: 6px 12px; border-radius: 20px; font-size: 11px; display: none; z-index: 2100; }
+        
+        /* نافذة الشراء */
+        .purchase-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); justify-content: center; align-items: center; z-index: 3000; }
+        .modal-content { background: #1a2e1a; padding: 20px; border-radius: 20px; border: 2px solid #e74c3c; width: 90%; max-width: 350px; text-align: center; }
+        .modal-content input { width: 100%; padding: 8px; margin: 8px 0; background: #0f1a0f; border: 1px solid #e74c3c; border-radius: 8px; color: #fff; }
+        .modal-content button { background: #e74c3c; color: #fff; border: none; padding: 8px; border-radius: 8px; cursor: pointer; margin-top: 8px; width: 100%; }
+        
+        @media (max-width: 768px) { .color { width: 30px; height: 30px; } .controls { font-size: 10px; } }
     </style>
 </head>
 <body>
 
-<button class="lang-switch" onclick="toggleLanguage()" id="lang-btn">English</button>
-
-<!-- لوحة الألوان - 16 لوناً كاملاً -->
-<div class="color-palette" id="color-palette">
-    <div class="color" style="background: #e74c3c;" data-color="red" title="أحمر"></div>
-    <div class="color" style="background: #2c3e50;" data-color="black" title="أسود"></div>
-    <div class="color" style="background: #ecf0f1;" data-color="white" title="أبيض"></div>
-    <div class="color" style="background: #2ecc71;" data-color="green" title="أخضر"></div>
-    <div class="color" style="background: #f1c40f;" data-color="gold" title="ذهبي"></div>
-    <div class="color" style="background: #3498db;" data-color="blue" title="أزرق"></div>
-    <div class="color" style="background: #e67e22;" data-color="orange" title="برتقالي"></div>
-    <div class="color" style="background: #9b59b6;" data-color="purple" title="بنفسجي"></div>
-    <div class="color" style="background: #1abc9c;" data-color="cyan" title="سماوي"></div>
-    <div class="color" style="background: #fd79a8;" data-color="pink" title="وردي"></div>
-    <div class="color" style="background: #8B4513;" data-color="brown" title="بني"></div>
-    <div class="color" style="background: #34495e;" data-color="navy" title="كحلي"></div>
-    <div class="color" style="background: #ffeaa7;" data-color="lightyellow" title="أصفر فاتح"></div>
-    <div class="color" style="background: #55efc4;" data-color="lightgreen" title="أخضر فاتح"></div>
-    <div class="color" style="background: #74b9ff;" data-color="lightblue" title="أزرق فاتح"></div>
-    <div class="color" style="background: #b2bec3;" data-color="gray" title="رمادي"></div>
-</div>
-
-<div class="draw-info" id="draw-info">
-    🎨 16 لوناً للرسم<br>
-    🖱️ اضغط واسحب للرسم<br>
-    💰 اضغط على بكسل لشرائه
-</div>
-
-<div class="header">
-    <h1 id="main-title">🇵🇸 THE WALL OF SOLIDARITY 2026 🇵🇸</h1>
-    <p id="sub-title">ارسم تضامنك بـ 16 لوناً.. كل بكسل هو رسالة حب لفلسطين</p>
-</div>
-
-<div class="goal-bar">
-    <div class="goal-stat"><div class="number" id="sold-count">0</div><div id="label-sold" class="label">بكسل مباع</div></div>
-    <div class="goal-stat"><div class="number">1,000,000</div><div id="label-target" class="label">هدف المليون</div></div>
-    <div class="goal-stat"><div class="number">1$</div><div id="label-price" class="label">سعر البكسل</div></div>
-</div>
-
-<div class="wall-message"><p id="desc-text">🎨 اختر لوناً من اللوحة.. ارسم بحرية.. اضغط على بكسل لشرائه وتخليد رابطك.</p></div>
-
-<div id="pixel-wall" class="pixel-wall"></div>
-
-<div class="social-section">
-    <h3 id="social-title">📢 انضم لمجتمعنا وشارك في الرحلة</h3>
-    <div class="social-icons">
-        <a href="https://instagram.com/yourusername" target="_blank">📷 Instagram</a>
-        <a href="https://discord.gg/yourinvite" target="_blank">💬 Discord</a>
-        <a href="https://t.me/yourchannel" target="_blank">📨 Telegram</a>
+<div class="controls">
+    <button class="lang-switch" id="lang-btn" onclick="toggleLanguage()">English</button>
+    <div class="stats">
+        <div class="stat">🎨 <span id="pixel-count">0</span> / 1,000,000</div>
+        <div class="stat">💰 <span id="price">1</span>$</div>
     </div>
 </div>
 
-<div class="footer" id="footer-text">The Wall of Solidarity 2026 - حيث ترسم القلوب بـ 16 لوناً جدار المستحيل</div>
+<div class="color-palette" id="color-palette"></div>
 
-<div id="purchase-modal" class="purchase-modal">
-    <div class="modal-content">
-        <div style="font-size: 40px;">🇵🇸</div>
-        <h2 id="modal-title">اشتر هذا البكسل</h2>
-        <p id="modal-desc">بعد الشراء، سيظهر رابطك ويمنع الرسم عليه</p>
-        <input type="text" id="owner-name" placeholder="اسمك أو معرفك">
-        <input type="url" id="owner-url" placeholder="رابط حسابك">
-        <button id="confirm-purchase">✅ تأكيد الشراء (1$)</button>
-        <button onclick="closeModal()" class="close-btn" id="cancel-btn">❌ إلغاء</button>
-    </div>
+<div class="canvas-container" id="canvas-container">
+    <canvas id="canvas"></canvas>
 </div>
 
 <div class="loading" id="loading">⏳ جاري المعالجة...</div>
 
+<div id="purchase-modal" class="purchase-modal">
+    <div class="modal-content">
+        <div style="font-size: 40px;">🇵🇸</div>
+        <h3 id="modal-title">اشتر هذا البكسل</h3>
+        <p id="modal-desc">بعد الشراء، سيظهر لونك ورابطك للجميع</p>
+        <input type="text" id="owner-name" placeholder="اسمك أو معرفك">
+        <input type="url" id="owner-url" placeholder="رابط حسابك">
+        <button id="confirm-purchase">✅ تأكيد الشراء (1$)</button>
+        <button onclick="closeModal()" id="cancel-btn">❌ إلغاء</button>
+    </div>
+</div>
+
 <script>
+    // ===================== الإعدادات =====================
     const SERVER_URL = "https://thewallofsolidarity20261-production.up.railway.app";
+    const SIZE = 1000;  // 1000 × 1000 = 1,000,000 بكسل
     let currentLang = 'ar';
-    let selectedPixel = null;
-    let soldPixels = new Map();
-    let drawnPixels = new Map();
     let currentColor = "#e74c3c";
-    let currentColorName = "red";
+    let soldPixels = new Map(); // key: "x,y" -> {color, owner, url}
     let ws = null;
-    let isDrawing = false;
-
-    // 16 لوناً مع أسمائها
-    const colorsMap = {
-        red: "#e74c3c", black: "#2c3e50", white: "#ecf0f1", green: "#2ecc71",
-        gold: "#f1c40f", blue: "#3498db", orange: "#e67e22", purple: "#9b59b6",
-        cyan: "#1abc9c", pink: "#fd79a8", brown: "#8B4513", navy: "#34495e",
-        lightyellow: "#ffeaa7", lightgreen: "#55efc4", lightblue: "#74b9ff", gray: "#b2bec3"
-    };
-
+    let selectedPixel = null;
+    
+    // الألوان (16 لوناً)
+    const colorsList = [
+        "#e74c3c", "#2c3e50", "#ecf0f1", "#2ecc71", "#f1c40f", "#3498db", "#e67e22", "#9b59b6",
+        "#1abc9c", "#fd79a8", "#8B4513", "#34495e", "#ffeaa7", "#55efc4", "#74b9ff", "#b2bec3"
+    ];
+    
     // الترجمة
     const translations = {
-        ar: {
-            title: "جدار التضامن 2026 - لوحة الرسم بـ 16 لوناً 🇵🇸",
-            mainTitle: "🇵🇸 THE WALL OF SOLIDARITY 2026 🇵🇸",
-            subTitle: "ارسم تضامنك بـ 16 لوناً.. كل بكسل هو رسالة حب لفلسطين",
-            sold: "بكسل مباع", target: "هدف المليون", price: "سعر البكسل",
-            desc: "🎨 اختر لوناً من اللوحة.. ارسم بحرية.. اضغط على بكسل لشرائه وتخليد رابطك.",
-            social: "📢 انضم لمجتمعنا وشارك في الرحلة",
-            footer: "The Wall of Solidarity 2026 - حيث ترسم القلوب بـ 16 لوناً جدار المستحيل",
-            modalTitle: "اشتر هذا البكسل", modalDesc: "بعد الشراء، سيظهر رابطك ويمنع الرسم عليه",
-            confirm: "✅ تأكيد الشراء (1$)", cancel: "❌ إلغاء", langBtn: "English",
-            soldAlert: "❌ هذا البكسل تم شراؤه بالفعل!", fillFields: "❌ الرجاء إدخال اسمك ورابط حسابك",
-            freePixel: "🎉 تهانينا! لقد حصلت على بكسل مجاني!", paymentSuccess: "✅ تم تأكيد الدفع!",
-            processing: "⏳ جاري المعالجة...", waiting: "⏳ في انتظار تأكيد الدفع..."
-        },
-        en: {
-            title: "The Wall of Solidarity 2026 - 16-Color Drawing Canvas 🇵🇸",
-            mainTitle: "🇵🇸 THE WALL OF SOLIDARITY 2026 🇵🇸",
-            subTitle: "Draw your solidarity with 16 colors.. Every pixel is a message of love for Palestine",
-            sold: "Pixels Sold", target: "Million Goal", price: "Price per Pixel",
-            desc: "🎨 Choose a color from the palette.. Draw freely.. Click a pixel to buy it and immortalize your link.",
-            social: "📢 Join our community and share the journey",
-            footer: "The Wall of Solidarity 2026 - where hearts draw the wall of the impossible with 16 colors",
-            modalTitle: "Buy This Pixel", modalDesc: "After purchase, your link will appear and drawing will be locked",
-            confirm: "✅ Confirm Purchase (1$)", cancel: "❌ Cancel", langBtn: "العربية",
-            soldAlert: "❌ This pixel has already been sold!", fillFields: "❌ Please enter your name and URL",
-            freePixel: "🎉 Congratulations! You got a free pixel!", paymentSuccess: "✅ Payment confirmed!",
-            processing: "⏳ Processing...", waiting: "⏳ Waiting for payment confirmation..."
-        }
+        ar: { title: "اشتر هذا البكسل", desc: "بعد الشراء، سيظهر لونك ورابطك للجميع", confirm: "✅ تأكيد الشراء (1$)", cancel: "❌ إلغاء", langBtn: "English" },
+        en: { title: "Buy This Pixel", desc: "Your color and link will appear to everyone", confirm: "✅ Confirm Purchase (1$)", cancel: "❌ Cancel", langBtn: "العربية" }
     };
-
+    
+    // ===================== إعدادات اللوحة (Canvas) =====================
+    const canvas = document.getElementById('canvas');
+    const container = document.getElementById('canvas-container');
+    let ctx = canvas.getContext('2d');
+    let scale = 4;  // حجم البكسل بالبكسل الفعلي (4×4)
+    let offsetX = 0, offsetY = 0;
+    
+    function resizeCanvas() {
+        canvas.width = SIZE * scale;
+        canvas.height = SIZE * scale;
+        canvas.style.width = `${SIZE * scale}px`;
+        canvas.style.height = `${SIZE * scale}px`;
+        drawAllPixels();
+    }
+    
+    function drawAllPixels() {
+        if (!ctx) return;
+        for (let y = 0; y < SIZE; y++) {
+            for (let x = 0; x < SIZE; x++) {
+                const key = `${x},${y}`;
+                if (soldPixels.has(key)) {
+                    const data = soldPixels.get(key);
+                    ctx.fillStyle = data.color;
+                    ctx.fillRect(x * scale, y * scale, scale, scale);
+                } else {
+                    ctx.fillStyle = "#2d2d2d";
+                    ctx.fillRect(x * scale, y * scale, scale, scale);
+                }
+            }
+        }
+    }
+    
+    function drawPixel(x, y, color) {
+        if (!ctx) return;
+        ctx.fillStyle = color;
+        ctx.fillRect(x * scale, y * scale, scale, scale);
+    }
+    
+    // تحويل إحداثيات النقرة إلى إحداثيات البكسل
+    function getPixelFromClick(clientX, clientY) {
+        const rect = canvas.getBoundingClientRect();
+        const canvasX = (clientX - rect.left) * (canvas.width / rect.width);
+        const canvasY = (clientY - rect.top) * (canvas.height / rect.height);
+        const x = Math.floor(canvasX / scale);
+        const y = Math.floor(canvasY / scale);
+        return { x, y };
+    }
+    
+    // ===================== WebSocket (تحديث فوري) =====================
     function connectWebSocket() {
         const wsUrl = SERVER_URL.replace("https://", "").replace("http://", "");
         ws = new WebSocket(`wss://${wsUrl}/ws`);
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            if (data.type === "draw") {
-                drawnPixels.set(`${data.x},${data.y}`, data.color);
-                updatePixelDisplay(data.x, data.y);
-            } else if (data.type === "sold") {
-                soldPixels.set(`${data.x},${data.y}`, { owner: data.owner, url: data.url });
-                updatePixelDisplay(data.x, data.y);
+            if (data.type === "new_pixel") {
+                const key = `${data.x},${data.y}`;
+                soldPixels.set(key, { color: data.color, owner: data.owner, url: data.url });
+                drawPixel(data.x, data.y, data.color);
+                document.getElementById('pixel-count').innerText = soldPixels.size;
             }
         };
         ws.onclose = () => setTimeout(connectWebSocket, 3000);
     }
-
-    function updatePixelDisplay(x, y) {
-        const key = `${x},${y}`;
-        const pixel = document.querySelector(`.pixel[data-x='${x}'][data-y='${y}']`);
-        if (!pixel) return;
-        
-        if (soldPixels.has(key)) {
-            pixel.classList.add('sold');
-            pixel.classList.remove('drawn');
-            const sold = soldPixels.get(key);
-            if (sold && sold.url) {
-                pixel.style.backgroundImage = `url('https://favicon.yandex.net/favicon/${sold.url}')`;
-                pixel.style.backgroundColor = "";
-            }
-        } else if (drawnPixels.has(key)) {
-            pixel.classList.remove('sold');
-            pixel.classList.add('drawn');
-            pixel.style.backgroundColor = drawnPixels.get(key);
-            pixel.style.backgroundImage = "none";
-        } else {
-            pixel.classList.remove('sold', 'drawn');
-            pixel.style.backgroundColor = "#2d2d2d";
-            pixel.style.backgroundImage = "none";
-        }
-    }
-
-    function createWall() {
-        const wall = document.getElementById('pixel-wall');
-        wall.innerHTML = '';
-        for (let y = 0; y < 100; y++) {
-            for (let x = 0; x < 100; x++) {
-                const pixel = document.createElement('div');
-                pixel.className = 'pixel';
-                pixel.setAttribute('data-x', x);
-                pixel.setAttribute('data-y', y);
-                updatePixelDisplay(x, y);
-                pixel.onclick = (e) => {
-                    e.stopPropagation();
-                    openPurchase(x, y);
-                };
-                pixel.onmousedown = (e) => {
-                    if (soldPixels.has(`${x},${y}`)) return;
-                    isDrawing = true;
-                    drawPixel(x, y);
-                    e.preventDefault();
-                };
-                pixel.onmouseover = () => {
-                    if (isDrawing && !soldPixels.has(`${x},${y}`)) drawPixel(x, y);
-                };
-                wall.appendChild(pixel);
-            }
-        }
-        document.getElementById('sold-count').innerText = soldPixels.size;
-    }
-
-    function drawPixel(x, y) {
-        if (soldPixels.has(`${x},${y}`)) return;
-        drawnPixels.set(`${x},${y}`, currentColor);
-        updatePixelDisplay(x, y);
-        if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ type: "draw", x, y, color: currentColor }));
-        }
-    }
-
-    async function fetchData() {
+    
+    // ===================== جلب البيانات من السيرفر =====================
+    async function fetchPixels() {
         try {
-            const soldRes = await fetch(`${SERVER_URL}/pixels/sold`);
-            const soldData = await soldRes.json();
+            const res = await fetch(`${SERVER_URL}/pixels`);
+            const data = await res.json();
             soldPixels.clear();
-            if (soldData.pixels) {
-                soldData.pixels.forEach(p => soldPixels.set(`${p.x},${p.y}`, { owner: p.owner, url: p.url }));
+            if (data.pixels) {
+                data.pixels.forEach(p => {
+                    soldPixels.set(`${p.x},${p.y}`, { color: p.color, owner: p.owner, url: p.url });
+                });
             }
-            
-            const drawnRes = await fetch(`${SERVER_URL}/pixels/drawn`);
-            const drawnData = await drawnRes.json();
-            drawnPixels.clear();
-            if (drawnData.pixels) {
-                drawnData.pixels.forEach(p => drawnPixels.set(`${p.x},${p.y}`, p.color));
+            document.getElementById('pixel-count').innerText = soldPixels.size;
+            drawAllPixels();
+        } catch(e) { console.error(e); }
+    }
+    
+    // ===================== أحداث النقر على اللوحة =====================
+    canvas.addEventListener('click', (e) => {
+        const { x, y } = getPixelFromClick(e.clientX, e.clientY);
+        if (x >= 0 && x < SIZE && y >= 0 && y < SIZE) {
+            const key = `${x},${y}`;
+            if (soldPixels.has(key)) {
+                alert(translations[currentLang].soldAlert || "This pixel is already sold!");
+                return;
             }
-            
-            createWall();
-        } catch(e) { 
-            console.error("Fetch error:", e);
-            createWall(); 
+            selectedPixel = { x, y };
+            document.getElementById('purchase-modal').style.display = 'flex';
         }
-    }
-
-    function openPurchase(x, y) {
-        const t = translations[currentLang];
-        if (soldPixels.has(`${x},${y}`)) { alert(t.soldAlert); return; }
-        selectedPixel = { x, y };
-        document.getElementById('purchase-modal').style.display = 'flex';
-    }
-
+    });
+    
+    // ===================== إنشاء فاتورة ودفع =====================
     async function createInvoice(owner, url) {
         const loading = document.getElementById('loading');
-        const t = translations[currentLang];
         loading.style.display = 'block';
-        loading.innerText = t.processing;
         try {
             const res = await fetch(`${SERVER_URL}/create-invoice`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ x: selectedPixel.x, y: selectedPixel.y, owner, url })
+                body: JSON.stringify({
+                    x: selectedPixel.x,
+                    y: selectedPixel.y,
+                    color: currentColor,
+                    owner: owner,
+                    url: url
+                })
             });
             const data = await res.json();
             if (data.free) {
                 loading.style.display = 'none';
                 closeModal();
-                alert(t.freePixel);
-                fetchData();
+                alert('🎉 تهانينا! بكسل مجاني!');
+                fetchPixels();
                 return;
             }
             if (data.pay_url) {
@@ -305,12 +223,11 @@
             alert("Network error");
         }
     }
-
+    
     async function checkPaymentStatus(invoiceId) {
         const loading = document.getElementById('loading');
-        const t = translations[currentLang];
         loading.style.display = 'block';
-        loading.innerText = t.waiting;
+        loading.innerText = '⏳ في انتظار تأكيد الدفع...';
         for (let i = 0; i < 60; i++) {
             await new Promise(r => setTimeout(r, 5000));
             try {
@@ -318,8 +235,8 @@
                 const data = await res.json();
                 if (data.status === 'paid') {
                     loading.style.display = 'none';
-                    alert(t.paymentSuccess);
-                    fetchData();
+                    alert('✅ تم تأكيد الدفع!');
+                    fetchPixels();
                     return;
                 }
             } catch(e) {}
@@ -327,56 +244,62 @@
         loading.style.display = 'none';
         alert("Payment not confirmed within 5 minutes");
     }
-
+    
     function closeModal() {
         document.getElementById('purchase-modal').style.display = 'none';
         document.getElementById('owner-name').value = '';
         document.getElementById('owner-url').value = '';
     }
-
+    
+    // ===================== لوحة الألوان =====================
+    function buildColorPalette() {
+        const palette = document.getElementById('color-palette');
+        palette.innerHTML = '';
+        colorsList.forEach(color => {
+            const div = document.createElement('div');
+            div.className = 'color';
+            div.style.backgroundColor = color;
+            div.onclick = () => {
+                document.querySelectorAll('.color').forEach(c => c.classList.remove('active'));
+                div.classList.add('active');
+                currentColor = color;
+            };
+            palette.appendChild(div);
+        });
+        document.querySelector('.color').classList.add('active');
+    }
+    
+    // ===================== تبديل اللغة =====================
     function toggleLanguage() {
         currentLang = currentLang === 'ar' ? 'en' : 'ar';
         const t = translations[currentLang];
-        document.getElementById('main-html').dir = currentLang === 'ar' ? 'rtl' : 'ltr';
-        document.getElementById('main-html').lang = currentLang;
-        document.getElementById('page-title').innerText = t.title;
-        document.getElementById('main-title').innerText = t.mainTitle;
-        document.getElementById('sub-title').innerText = t.subTitle;
-        document.getElementById('label-sold').innerText = t.sold;
-        document.getElementById('label-target').innerText = t.target;
-        document.getElementById('label-price').innerText = t.price;
-        document.getElementById('desc-text').innerText = t.desc;
-        document.getElementById('social-title').innerText = t.social;
-        document.getElementById('footer-text').innerText = t.footer;
-        document.getElementById('modal-title').innerText = t.modalTitle;
-        document.getElementById('modal-desc').innerText = t.modalDesc;
+        document.getElementById('modal-title').innerText = t.title;
+        document.getElementById('modal-desc').innerText = t.desc;
         document.getElementById('confirm-purchase').innerText = t.confirm;
         document.getElementById('cancel-btn').innerText = t.cancel;
         document.getElementById('lang-btn').innerText = t.langBtn;
     }
-
-    // إعدادات الألوان
-    document.querySelectorAll('.color').forEach(el => {
-        el.addEventListener('click', () => {
-            document.querySelectorAll('.color').forEach(c => c.classList.remove('active'));
-            el.classList.add('active');
-            currentColorName = el.dataset.color;
-            currentColor = colorsMap[currentColorName];
-        });
+    
+    // ===================== التكبير والتحريك =====================
+    container.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        scale = Math.min(20, Math.max(2, scale + delta));
+        resizeCanvas();
     });
-    document.querySelector('.color').classList.add('active');
-    document.addEventListener('mouseup', () => isDrawing = false);
-
+    
+    // ===================== بدء التشغيل =====================
     document.getElementById('confirm-purchase').onclick = () => {
-        const t = translations[currentLang];
         const owner = document.getElementById('owner-name').value.trim();
         const url = document.getElementById('owner-url').value.trim();
-        if (!owner || !url) { alert(t.fillFields); return; }
+        if (!owner || !url) { alert('❌ الرجاء إدخال اسمك ورابط حسابك'); return; }
         createInvoice(owner, url);
     };
-
+    
+    buildColorPalette();
+    resizeCanvas();
     connectWebSocket();
-    fetchData();
+    fetchPixels();
 </script>
 </body>
 </html>
