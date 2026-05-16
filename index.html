@@ -8,35 +8,46 @@
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
         body { background: linear-gradient(135deg, #0a2e0a 0%, #1a1a2e 100%); min-height: 100vh; font-family: 'Tajawal', 'Cairo', sans-serif; color: #fff; overflow: hidden; }
         
-        /* واجهة التحكم */
+        /* واجهة التحكم العلوية */
         .controls { position: fixed; top: 10px; left: 10px; right: 10px; z-index: 2000; display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; background: rgba(0,0,0,0.7); padding: 8px 12px; border-radius: 30px; backdrop-filter: blur(5px); }
         .lang-switch { background: #e74c3c; border: none; padding: 5px 12px; border-radius: 20px; color: #fff; cursor: pointer; font-weight: bold; }
         .stats { display: flex; gap: 15px; }
         .stat { font-size: 12px; }
         .stat span { color: #e74c3c; font-weight: bold; }
         
-        /* لوحة الألوان - أفقية قابلة للتمرير */
+        /* أزرار التكبير والتصغير (جانب الشاشة) */
+        .zoom-controls { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
+        .zoom-btn { width: 45px; height: 45px; border-radius: 50%; background: rgba(0,0,0,0.8); border: 2px solid #e74c3c; color: #e74c3c; font-size: 24px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: 0.2s; }
+        .zoom-btn:hover { background: #e74c3c; color: #fff; transform: scale(1.05); }
+        .zoom-level { font-size: 12px; text-align: center; margin-top: 5px; color: #e74c3c; background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 20px; }
+        
+        /* لوحة الألوان */
         .color-palette { position: fixed; bottom: 10px; left: 10px; right: 10px; z-index: 2000; background: rgba(0,0,0,0.85); padding: 8px; border-radius: 30px; display: flex; gap: 6px; overflow-x: auto; justify-content: center; backdrop-filter: blur(5px); }
         .color { width: 35px; height: 35px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.5); flex-shrink: 0; transition: 0.1s; }
         .color.active { border-color: #e74c3c; box-shadow: 0 0 10px #e74c3c; transform: scale(1.05); }
         
-        /* حاوية اللوحة (قابلة للتحريك والتكبير) */
+        /* حاوية اللوحة */
         .canvas-container { width: 100vw; height: 100vh; overflow: auto; cursor: grab; background: #111; }
         .canvas-container:active { cursor: grabbing; }
         
-        /* اللوحة العملاقة (Canvas) */
+        /* اللوحة */
         #canvas { display: block; margin: 0; background: #2d2d2d; }
         
-        /* مؤشر التحميل */
+        /* روابط التواصل */
+        .social-section { position: fixed; bottom: 80px; left: 0; right: 0; text-align: center; padding: 10px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 2000; }
+        .social-section h3 { font-size: 14px; margin-bottom: 8px; color: #e74c3c; }
+        .social-icons { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
+        .social-icons a { color: #fff; text-decoration: none; padding: 5px 15px; border-radius: 20px; background: rgba(255,255,255,0.1); font-size: 12px; transition: 0.2s; }
+        .social-icons a:hover { background: #e74c3c; transform: scale(1.05); }
+        
         .loading { position: fixed; bottom: 20px; right: 20px; background: #e74c3c; padding: 6px 12px; border-radius: 20px; font-size: 11px; display: none; z-index: 2100; }
         
-        /* نافذة الشراء */
         .purchase-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); justify-content: center; align-items: center; z-index: 3000; }
         .modal-content { background: #1a2e1a; padding: 20px; border-radius: 20px; border: 2px solid #e74c3c; width: 90%; max-width: 350px; text-align: center; }
         .modal-content input { width: 100%; padding: 8px; margin: 8px 0; background: #0f1a0f; border: 1px solid #e74c3c; border-radius: 8px; color: #fff; }
         .modal-content button { background: #e74c3c; color: #fff; border: none; padding: 8px; border-radius: 8px; cursor: pointer; margin-top: 8px; width: 100%; }
         
-        @media (max-width: 768px) { .color { width: 30px; height: 30px; } .controls { font-size: 10px; } }
+        @media (max-width: 768px) { .color { width: 30px; height: 30px; } .controls { font-size: 10px; } .zoom-btn { width: 40px; height: 40px; font-size: 20px; } .social-section { bottom: 70px; } }
     </style>
 </head>
 <body>
@@ -49,10 +60,30 @@
     </div>
 </div>
 
+<!-- أزرار التكبير والتصغير -->
+<div class="zoom-controls">
+    <div class="zoom-btn" id="zoom-in">+</div>
+    <div class="zoom-btn" id="zoom-out">-</div>
+    <div class="zoom-btn" id="zoom-reset" style="font-size: 16px;">⟳</div>
+    <div class="zoom-level" id="zoom-level">100%</div>
+</div>
+
+<!-- لوحة الألوان -->
 <div class="color-palette" id="color-palette"></div>
 
+<!-- حاوية اللوحة -->
 <div class="canvas-container" id="canvas-container">
     <canvas id="canvas"></canvas>
+</div>
+
+<!-- روابط التواصل الاجتماعي -->
+<div class="social-section">
+    <h3 id="social-title">📢 تابعنا على وسائل التواصل</h3>
+    <div class="social-icons">
+        <a href="https://instagram.com/yourusername" target="_blank" id="social-instagram">📷 Instagram</a>
+        <a href="https://discord.gg/yourinvite" target="_blank" id="social-discord">💬 Discord</a>
+        <a href="https://t.me/yourchannel" target="_blank" id="social-telegram">📨 Telegram</a>
+    </div>
 </div>
 
 <div class="loading" id="loading">⏳ جاري المعالجة...</div>
@@ -71,13 +102,32 @@
 
 <script>
     // ===================== الإعدادات =====================
+    // 🔴 قم بتغيير هذا الرابط إلى رابط السيرفر الخاص بك على Railway
     const SERVER_URL = "https://thewallofsolidarity20261-production.up.railway.app";
+    
+    // 🔴 قم بتغيير روابط التواصل الاجتماعي هنا
+    const SOCIAL_LINKS = {
+        instagram: "https://instagram.com/yourusername",
+        discord: "https://discord.gg/yourinvite",
+        telegram: "https://t.me/yourchannel"
+    };
+    
+    // تطبيق روابط التواصل
+    document.getElementById('social-instagram').href = SOCIAL_LINKS.instagram;
+    document.getElementById('social-discord').href = SOCIAL_LINKS.discord;
+    document.getElementById('social-telegram').href = SOCIAL_LINKS.telegram;
+    
     const SIZE = 1000;  // 1000 × 1000 = 1,000,000 بكسل
     let currentLang = 'ar';
     let currentColor = "#e74c3c";
-    let soldPixels = new Map(); // key: "x,y" -> {color, owner, url}
+    let soldPixels = new Map();
     let ws = null;
     let selectedPixel = null;
+    
+    // إعدادات التكبير
+    let currentZoom = 4;
+    let minZoom = 2;
+    let maxZoom = 20;
     
     // الألوان (16 لوناً)
     const colorsList = [
@@ -87,16 +137,15 @@
     
     // الترجمة
     const translations = {
-        ar: { title: "اشتر هذا البكسل", desc: "بعد الشراء، سيظهر لونك ورابطك للجميع", confirm: "✅ تأكيد الشراء (1$)", cancel: "❌ إلغاء", langBtn: "English" },
-        en: { title: "Buy This Pixel", desc: "Your color and link will appear to everyone", confirm: "✅ Confirm Purchase (1$)", cancel: "❌ Cancel", langBtn: "العربية" }
+        ar: { title: "اشتر هذا البكسل", desc: "بعد الشراء، سيظهر لونك ورابطك للجميع", confirm: "✅ تأكيد الشراء (1$)", cancel: "❌ إلغاء", langBtn: "English", social: "📢 تابعنا على وسائل التواصل" },
+        en: { title: "Buy This Pixel", desc: "Your color and link will appear to everyone", confirm: "✅ Confirm Purchase (1$)", cancel: "❌ Cancel", langBtn: "العربية", social: "📢 Follow us on social media" }
     };
     
-    // ===================== إعدادات اللوحة (Canvas) =====================
+    // ===================== إعدادات اللوحة =====================
     const canvas = document.getElementById('canvas');
     const container = document.getElementById('canvas-container');
     let ctx = canvas.getContext('2d');
-    let scale = 4;  // حجم البكسل بالبكسل الفعلي (4×4)
-    let offsetX = 0, offsetY = 0;
+    let scale = currentZoom;
     
     function resizeCanvas() {
         canvas.width = SIZE * scale;
@@ -104,6 +153,8 @@
         canvas.style.width = `${SIZE * scale}px`;
         canvas.style.height = `${SIZE * scale}px`;
         drawAllPixels();
+        const zoomPercent = Math.round((scale / 4) * 100);
+        document.getElementById('zoom-level').innerText = `${zoomPercent}%`;
     }
     
     function drawAllPixels() {
@@ -129,7 +180,6 @@
         ctx.fillRect(x * scale, y * scale, scale, scale);
     }
     
-    // تحويل إحداثيات النقرة إلى إحداثيات البكسل
     function getPixelFromClick(clientX, clientY) {
         const rect = canvas.getBoundingClientRect();
         const canvasX = (clientX - rect.left) * (canvas.width / rect.width);
@@ -139,7 +189,16 @@
         return { x, y };
     }
     
-    // ===================== WebSocket (تحديث فوري) =====================
+    // ===================== أزرار التكبير =====================
+    function zoomIn() { let newZoom = scale + 1; if (newZoom <= maxZoom) { scale = newZoom; resizeCanvas(); } }
+    function zoomOut() { let newZoom = scale - 1; if (newZoom >= minZoom) { scale = newZoom; resizeCanvas(); } }
+    function zoomReset() { scale = 4; resizeCanvas(); container.scrollTop = (container.scrollHeight - container.clientHeight) / 2; container.scrollLeft = (container.scrollWidth - container.clientWidth) / 2; }
+    
+    document.getElementById('zoom-in').addEventListener('click', zoomIn);
+    document.getElementById('zoom-out').addEventListener('click', zoomOut);
+    document.getElementById('zoom-reset').addEventListener('click', zoomReset);
+    
+    // ===================== WebSocket =====================
     function connectWebSocket() {
         const wsUrl = SERVER_URL.replace("https://", "").replace("http://", "");
         ws = new WebSocket(`wss://${wsUrl}/ws`);
@@ -155,37 +214,30 @@
         ws.onclose = () => setTimeout(connectWebSocket, 3000);
     }
     
-    // ===================== جلب البيانات من السيرفر =====================
+    // ===================== جلب البيانات =====================
     async function fetchPixels() {
         try {
             const res = await fetch(`${SERVER_URL}/pixels`);
             const data = await res.json();
             soldPixels.clear();
             if (data.pixels) {
-                data.pixels.forEach(p => {
-                    soldPixels.set(`${p.x},${p.y}`, { color: p.color, owner: p.owner, url: p.url });
-                });
+                data.pixels.forEach(p => { soldPixels.set(`${p.x},${p.y}`, { color: p.color, owner: p.owner, url: p.url }); });
             }
             document.getElementById('pixel-count').innerText = soldPixels.size;
             drawAllPixels();
         } catch(e) { console.error(e); }
     }
     
-    // ===================== أحداث النقر على اللوحة =====================
+    // ===================== الشراء =====================
     canvas.addEventListener('click', (e) => {
         const { x, y } = getPixelFromClick(e.clientX, e.clientY);
         if (x >= 0 && x < SIZE && y >= 0 && y < SIZE) {
-            const key = `${x},${y}`;
-            if (soldPixels.has(key)) {
-                alert(translations[currentLang].soldAlert || "This pixel is already sold!");
-                return;
-            }
+            if (soldPixels.has(`${x},${y}`)) { alert("❌ هذا البكسل تم شراؤه بالفعل!"); return; }
             selectedPixel = { x, y };
             document.getElementById('purchase-modal').style.display = 'flex';
         }
     });
     
-    // ===================== إنشاء فاتورة ودفع =====================
     async function createInvoice(owner, url) {
         const loading = document.getElementById('loading');
         loading.style.display = 'block';
@@ -193,13 +245,7 @@
             const res = await fetch(`${SERVER_URL}/create-invoice`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    x: selectedPixel.x,
-                    y: selectedPixel.y,
-                    color: currentColor,
-                    owner: owner,
-                    url: url
-                })
+                body: JSON.stringify({ x: selectedPixel.x, y: selectedPixel.y, color: currentColor, owner, url })
             });
             const data = await res.json();
             if (data.free) {
@@ -214,14 +260,8 @@
                 closeModal();
                 window.open(data.pay_url, '_blank');
                 checkPaymentStatus(data.invoice_id);
-            } else {
-                loading.style.display = 'none';
-                alert("Error creating invoice");
-            }
-        } catch(e) {
-            loading.style.display = 'none';
-            alert("Network error");
-        }
+            } else { loading.style.display = 'none'; alert("Error creating invoice"); }
+        } catch(e) { loading.style.display = 'none'; alert("Network error"); }
     }
     
     async function checkPaymentStatus(invoiceId) {
@@ -278,17 +318,10 @@
         document.getElementById('confirm-purchase').innerText = t.confirm;
         document.getElementById('cancel-btn').innerText = t.cancel;
         document.getElementById('lang-btn').innerText = t.langBtn;
+        document.getElementById('social-title').innerText = t.social;
     }
     
-    // ===================== التكبير والتحريك =====================
-    container.addEventListener('wheel', (e) => {
-        e.preventDefault();
-        const delta = e.deltaY > 0 ? -0.1 : 0.1;
-        scale = Math.min(20, Math.max(2, scale + delta));
-        resizeCanvas();
-    });
-    
-    // ===================== بدء التشغيل =====================
+    // ===================== التشغيل =====================
     document.getElementById('confirm-purchase').onclick = () => {
         const owner = document.getElementById('owner-name').value.trim();
         const url = document.getElementById('owner-url').value.trim();
