@@ -15,7 +15,8 @@ from typing import Optional
 
 # ===================== التكوين =====================
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "567216:AAUeBN5UmkXwJOcxI8m0FCpxc42457YEyvU")
-CRYPTOBOT_API = "https://pay.crypt.bot/apiadsUPLOAD_FOLDER = "uploads"
+CRYPTOBOT_API = "https://pay.crypt.bot/api"
+UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 app = FastAPI()
