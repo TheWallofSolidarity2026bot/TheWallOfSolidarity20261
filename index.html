@@ -1,86 +1,90 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" id="main-html">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>جدار الإعلانات - مليون بكسل إعلاني</title>
+    <title>جدار التضامن 2026 - النسخة التجريبية المجانية</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
         body { background: linear-gradient(135deg, #0a2e0a 0%, #1a1a2e 100%); min-height: 100vh; font-family: 'Tajawal', 'Cairo', sans-serif; color: #fff; overflow: hidden; }
         
-        .controls { position: fixed; top: 10px; left: 10px; right: 10px; z-index: 2000; display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; background: rgba(0,0,0,0.7); padding: 8px 12px; border-radius: 30px; backdrop-filter: blur(5px); }
-        .stats { display: flex; gap: 15px; }
-        .stat { font-size: 12px; }
-        .stat span { color: #e74c3c; font-weight: bold; }
+        .top-bar { position: fixed; top: 0; left: 0; right: 0; background: rgba(0,0,0,0.85); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; z-index: 2000; backdrop-filter: blur(5px); }
+        .lang-btn { background: #e74c3c; border: none; padding: 5px 15px; border-radius: 20px; color: #fff; cursor: pointer; font-weight: bold; }
+        .stats { display: flex; gap: 15px; font-size: 12px; }
+        .stats span { color: #e74c3c; font-weight: bold; }
         
-        .zoom-controls { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
-        .zoom-btn { width: 45px; height: 45px; border-radius: 50%; background: rgba(0,0,0,0.8); border: 2px solid #e74c3c; color: #e74c3c; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .zoom-level { font-size: 12px; text-align: center; margin-top: 5px; color: #e74c3c; }
+        .zoom-buttons { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
+        .zoom-btn { width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,0.8); border: 2px solid #e74c3c; color: #e74c3c; font-size: 24px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .zoom-btn:hover { background: #e74c3c; color: #fff; }
+        .zoom-level { font-size: 11px; text-align: center; margin-top: 5px; color: #e74c3c; background: rgba(0,0,0,0.6); padding: 4px 6px; border-radius: 15px; }
         
-        .canvas-container { width: 100vw; height: 100vh; overflow: auto; cursor: crosshair; background: #111; }
+        .canvas-container { width: 100vw; height: 100vh; overflow: auto; cursor: crosshair; background: #111; margin-top: 50px; }
         #canvas { display: block; background: #2d2d2d; cursor: crosshair; }
         
-        /* واجهة تحديد المساحة */
-        .selection-overlay { position: fixed; border: 2px dashed #e74c3c; background: rgba(231,76,60,0.3); pointer-events: none; z-index: 1500; display: none; }
-        .selection-info { position: fixed; background: rgba(0,0,0,0.8); color: #fff; padding: 5px 10px; border-radius: 10px; font-size: 12px; z-index: 1500; display: none; }
+        .selection-info { position: fixed; background: rgba(0,0,0,0.85); color: #e74c3c; padding: 8px 15px; border-radius: 20px; font-size: 13px; font-weight: bold; z-index: 1500; display: none; pointer-events: none; }
         
-        .purchase-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); justify-content: center; align-items: center; z-index: 3000; }
-        .modal-content { background: #1a2e1a; padding: 20px; border-radius: 20px; border: 2px solid #e74c3c; width: 90%; max-width: 400px; text-align: center; }
-        .modal-content input, .modal-content file { width: 100%; padding: 8px; margin: 8px 0; background: #0f1a0f; border: 1px solid #e74c3c; border-radius: 8px; color: #fff; }
-        .modal-content button { background: #e74c3c; color: #fff; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 8px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); justify-content: center; align-items: center; z-index: 3000; }
+        .modal-content { background: #1a2e1a; padding: 25px; border-radius: 20px; border: 2px solid #e74c3c; width: 90%; max-width: 400px; text-align: center; }
+        .modal-content h3 { color: #e74c3c; margin-bottom: 15px; }
+        .modal-content input { width: 100%; padding: 10px; margin: 8px 0; background: #0f1a0f; border: 1px solid #e74c3c; border-radius: 8px; color: #fff; }
+        .modal-content input[type="file"] { padding: 5px; }
+        .modal-content button { background: #27ae60; color: #fff; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 8px; font-weight: bold; }
+        .cancel-btn { background: #555 !important; }
         
-        .loading { position: fixed; bottom: 20px; right: 20px; background: #e74c3c; padding: 6px 12px; border-radius: 20px; font-size: 11px; display: none; z-index: 2100; }
+        .loading { position: fixed; bottom: 20px; right: 20px; background: #27ae60; padding: 8px 15px; border-radius: 20px; font-size: 12px; display: none; z-index: 2100; }
+        .welcome { text-align: center; padding: 5px; font-size: 11px; background: rgba(0,0,0,0.5); position: fixed; bottom: 0; left: 0; right: 0; z-index: 2000; }
         
-        @media (max-width: 768px) { .controls { font-size: 10px; } .zoom-btn { width: 40px; height: 40px; } }
+        @media (max-width: 768px) { .top-bar { font-size: 10px; } .stats { gap: 8px; } .zoom-btn { width: 35px; height: 35px; font-size: 20px; } }
     </style>
 </head>
 <body>
 
-<div class="controls">
+<div class="top-bar">
+    <button class="lang-btn" id="langBtn">English</button>
     <div class="stats">
-        <div class="stat">📊 المساحة المباعة: <span id="area-count">0</span></div>
-        <div class="stat">💰 السعر: 1$ / بكسل</div>
+        <div class="stat">📊 <span id="areaCount">0</span> <span id="statSold">إعلان</span></div>
+        <div class="stat">💰 <span id="statFree">مجاني</span></div>
     </div>
-    <div class="stat">🖱️ اسحب لتحديد مساحة إعلانية</div>
+    <div class="stat" id="instructionText">🖱️ اسحب لتحديد مساحة إعلانية</div>
 </div>
 
-<div class="zoom-controls">
-    <div class="zoom-btn" id="zoom-in">+</div>
-    <div class="zoom-btn" id="zoom-out">-</div>
-    <div class="zoom-btn" id="zoom-reset" style="font-size: 16px;">⟳</div>
-    <div class="zoom-level" id="zoom-level">100%</div>
+<div class="zoom-buttons">
+    <div class="zoom-btn" id="zoomIn">+</div>
+    <div class="zoom-btn" id="zoomOut">-</div>
+    <div class="zoom-btn" id="zoomReset">⟳</div>
+    <div class="zoom-level" id="zoomLevel">100%</div>
 </div>
 
-<div class="canvas-container" id="canvas-container">
+<div class="canvas-container" id="canvasContainer">
     <canvas id="canvas"></canvas>
 </div>
 
-<div class="selection-overlay" id="selection-overlay"></div>
-<div class="selection-info" id="selection-info">0x0 (0 بكسل = 0$)</div>
+<div class="selection-info" id="selectionInfo">0x0 (0 بكسل)</div>
+<div class="loading" id="loading">⏳ جاري الحفظ...</div>
+<div class="welcome" id="welcomeText">🇵🇸 النسخة المجانية - جدار التضامن 2026 🇵🇸</div>
 
-<div class="loading" id="loading">⏳ جاري المعالجة...</div>
-
-<div id="purchase-modal" class="purchase-modal">
+<div id="modal" class="modal">
     <div class="modal-content">
         <div style="font-size: 40px;">🇵🇸</div>
-        <h3>اشتر هذه المساحة الإعلانية</h3>
-        <p id="modal-size">المساحة: 0x0 (0 بكسل)</p>
-        <p id="modal-price">السعر: 0$</p>
-        <input type="text" id="owner-name" placeholder="اسمك أو معرفك">
-        <input type="url" id="owner-url" placeholder="الرابط (موقعك أو حسابك)">
-        <input type="file" id="owner-image" accept="image/png,image/jpeg,image/jpg">
-        <button id="confirm-purchase">✅ تأكيد الشراء</button>
-        <button onclick="closeModal()" id="cancel-btn">❌ إلغاء</button>
+        <h3 id="modalTitle">أضف إعلانك</h3>
+        <p id="modalSize">المساحة: 0x0 (0 بكسل)</p>
+        <input type="text" id="ownerName" placeholder="اسمك أو معرفك">
+        <input type="url" id="ownerUrl" placeholder="الرابط (موقعك أو حسابك)">
+        <input type="file" id="ownerImage" accept="image/png,image/jpeg,image/jpg">
+        <button id="confirmBtn">✅ حفظ الإعلان</button>
+        <button class="cancel-btn" id="cancelBtn">❌ إلغاء</button>
     </div>
 </div>
 
 <script>
-    const SERVER_URL = "thewallofsolidarity20261-production.up.railway.app";
-    const CANVAS_SIZE = 1000;
+    // ===================== الإعدادات =====================
+    const CANVAS_SIZE = 400;  // 400×400 = 160,000 بكسل (خفيف وسريع)
     let scale = 4;
     let minZoom = 2, maxZoom = 20;
     let ctx, canvas, container;
     let soldAreas = [];
+    let currentLang = 'ar';
+    let nextId = 1;
     
     // متغيرات تحديد المساحة
     let isSelecting = false;
@@ -88,9 +92,48 @@
     let endX = 0, endY = 0;
     let selectedArea = null;
     
+    // ===================== الترجمة =====================
+    const texts = {
+        ar: {
+            langBtn: "English", statSold: "إعلان", statFree: "مجاني",
+            instruction: "🖱️ اسحب لتحديد مساحة إعلانية", welcome: "🇵🇸 النسخة المجانية - جدار التضامن 2026 🇵🇸",
+            modalTitle: "أضف إعلانك", confirm: "✅ حفظ الإعلان", cancel: "❌ إلغاء",
+            fillError: "❌ الرجاء إدخال جميع البيانات (الاسم، الرابط، الصورة)",
+            areaError: "❌ هذه المساحة متداخلة مع إعلان موجود! اختر مساحة أخرى.",
+            saveSuccess: "✅ تم حفظ إعلانك بنجاح!",
+            loadError: "❌ خطأ في تحميل البيانات"
+        },
+        en: {
+            langBtn: "العربية", statSold: "Ads", statFree: "Free",
+            instruction: "🖱️ Drag to select an advertising area", welcome: "🇵🇸 Free Version - The Wall of Solidarity 2026 🇵🇸",
+            modalTitle: "Add Your Ad", confirm: "✅ Save Ad", cancel: "❌ Cancel",
+            fillError: "❌ Please fill all fields (name, URL, image)",
+            areaError: "❌ This area overlaps with an existing ad! Choose another area.",
+            saveSuccess: "✅ Your ad has been saved successfully!",
+            loadError: "❌ Error loading data"
+        }
+    };
+    
+    function updateLanguage() {
+        const t = texts[currentLang];
+        document.getElementById('langBtn').innerText = t.langBtn;
+        document.getElementById('statSold').innerText = t.statSold;
+        document.getElementById('statFree').innerText = t.statFree;
+        document.getElementById('instructionText').innerText = t.instruction;
+        document.getElementById('welcomeText').innerHTML = t.welcome;
+        document.getElementById('modalTitle').innerText = t.modalTitle;
+        document.getElementById('confirmBtn').innerHTML = t.confirm;
+        document.getElementById('cancelBtn').innerHTML = t.cancel;
+    }
+    
+    function toggleLanguage() {
+        currentLang = currentLang === 'ar' ? 'en' : 'ar';
+        updateLanguage();
+    }
+    
     // ===================== إعدادات اللوحة =====================
     canvas = document.getElementById('canvas');
-    container = document.getElementById('canvas-container');
+    container = document.getElementById('canvasContainer');
     ctx = canvas.getContext('2d');
     
     function resizeCanvas() {
@@ -99,8 +142,8 @@
         canvas.style.width = `${CANVAS_SIZE * scale}px`;
         canvas.style.height = `${CANVAS_SIZE * scale}px`;
         drawAllAreas();
-        const zoomPercent = Math.round((scale / 4) * 100);
-        document.getElementById('zoom-level').innerText = `${zoomPercent}%`;
+        const percent = Math.round((scale / 4) * 100);
+        document.getElementById('zoomLevel').innerHTML = `${percent}%`;
     }
     
     function drawAllAreas() {
@@ -108,38 +151,39 @@
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         for (const area of soldAreas) {
-            const img = new Image();
-            img.onload = () => {
-                ctx.drawImage(img, area.x * scale, area.y * scale, area.width * scale, area.height * scale);
-            };
-            img.src = area.image_url;
+            try {
+                const img = new Image();
+                img.onload = () => {
+                    ctx.drawImage(img, area.x * scale, area.y * scale, area.width * scale, area.height * scale);
+                };
+                img.src = area.image_url;
+            } catch(e) {}
         }
     }
     
-    function drawSelection() {
-        if (!isSelecting) return;
-        const rectX = Math.min(startX, endX);
-        const rectY = Math.min(startY, endY);
-        const rectW = Math.abs(endX - startX);
-        const rectH = Math.abs(endY - startY);
-        
-        // رسم المستطيل المؤقت
-        ctx.fillStyle = "rgba(231,76,60,0.3)";
-        ctx.fillRect(rectX * scale, rectY * scale, rectW * scale, rectH * scale);
-        ctx.strokeStyle = "#e74c3c";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(rectX * scale, rectY * scale, rectW * scale, rectH * scale);
-        
-        // تحديث معلومات المساحة
-        const pixels = rectW * rectH;
-        const price = pixels * 1;
-        document.getElementById('selection-info').style.display = 'block';
-        document.getElementById('selection-info').innerHTML = `${rectW}x${rectH} (${pixels} بكسل = ${price}$)`;
-        document.getElementById('selection-info').style.left = (endX * scale + 20) + 'px';
-        document.getElementById('selection-info').style.top = (endY * scale - 30) + 'px';
+    // ===================== حفظ وتحميل البيانات (LocalStorage) =====================
+    function saveToLocalStorage() {
+        const data = {
+            areas: soldAreas,
+            nextId: nextId
+        };
+        localStorage.setItem('solidarity_wall', JSON.stringify(data));
     }
     
-    // ===================== أحداث الماوس =====================
+    function loadFromLocalStorage() {
+        const saved = localStorage.getItem('solidarity_wall');
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                soldAreas = data.areas || [];
+                nextId = data.nextId || soldAreas.length + 1;
+                document.getElementById('areaCount').innerText = soldAreas.length;
+                drawAllAreas();
+            } catch(e) {}
+        }
+    }
+    
+    // ===================== تحديد المساحة =====================
     function getCanvasCoords(e) {
         const rect = canvas.getBoundingClientRect();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -147,6 +191,26 @@
         const canvasX = (clientX - rect.left) * (canvas.width / rect.width);
         const canvasY = (clientY - rect.top) * (canvas.height / rect.height);
         return { x: Math.floor(canvasX / scale), y: Math.floor(canvasY / scale) };
+    }
+    
+    function drawSelection() {
+        const rectX = Math.min(startX, endX);
+        const rectY = Math.min(startY, endY);
+        const rectW = Math.abs(endX - startX) + 1;
+        const rectH = Math.abs(endY - startY) + 1;
+        
+        ctx.fillStyle = "rgba(231,76,60,0.3)";
+        ctx.fillRect(rectX * scale, rectY * scale, rectW * scale, rectH * scale);
+        ctx.strokeStyle = "#e74c3c";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(rectX * scale, rectY * scale, rectW * scale, rectH * scale);
+        
+        const pixels = rectW * rectH;
+        const infoDiv = document.getElementById('selectionInfo');
+        infoDiv.style.display = 'block';
+        infoDiv.innerHTML = `${rectW}x${rectH} (${pixels} بكسل)`;
+        infoDiv.style.left = (endX * scale + 20) + 'px';
+        infoDiv.style.top = (endY * scale - 30) + 'px';
     }
     
     function onMouseDown(e) {
@@ -165,7 +229,6 @@
         const { x, y } = getCanvasCoords(e);
         endX = Math.min(CANVAS_SIZE - 1, Math.max(0, x));
         endY = Math.min(CANVAS_SIZE - 1, Math.max(0, y));
-        
         drawAllAreas();
         drawSelection();
     }
@@ -180,7 +243,6 @@
         const rectH = Math.abs(endY - startY) + 1;
         
         if (rectW > 0 && rectH > 0) {
-            // التحقق من أن المساحة غير مباعة
             let overlap = false;
             for (const area of soldAreas) {
                 if (!(rectX + rectW <= area.x || area.x + area.width <= rectX ||
@@ -190,17 +252,15 @@
                 }
             }
             if (overlap) {
-                alert("❌ هذه المساحة متداخلة مع إعلان مباع! اختر مساحة أخرى.");
+                alert(texts[currentLang].areaError);
             } else {
-                selectedArea = { x: rectX, y: rectY, width: rectW, height: rectH, pixels: rectW * rectH, price: rectW * rectH };
-                document.getElementById('modal-size').innerHTML = `المساحة: ${rectW}x${rectH} (${rectW * rectH} بكسل)`;
-                document.getElementById('modal-price').innerHTML = `السعر: ${rectW * rectH}$`;
-                document.getElementById('purchase-modal').style.display = 'flex';
+                selectedArea = { x: rectX, y: rectY, width: rectW, height: rectH };
+                document.getElementById('modalSize').innerHTML = `المساحة: ${rectW}x${rectH} (${rectW*rectH} بكسل)`;
+                document.getElementById('modal').style.display = 'flex';
             }
         }
-        
         drawAllAreas();
-        document.getElementById('selection-info').style.display = 'none';
+        document.getElementById('selectionInfo').style.display = 'none';
     }
     
     canvas.addEventListener('mousedown', onMouseDown);
@@ -211,103 +271,87 @@
     canvas.addEventListener('touchend', onMouseUp);
     
     // ===================== التكبير والتصغير =====================
-    function zoomIn() { let newZoom = scale + 1; if (newZoom <= maxZoom) { scale = newZoom; resizeCanvas(); } }
-    function zoomOut() { let newZoom = scale - 1; if (newZoom >= minZoom) { scale = newZoom; resizeCanvas(); } }
-    function zoomReset() { scale = 4; resizeCanvas(); container.scrollTop = (container.scrollHeight - container.clientHeight) / 2; container.scrollLeft = (container.scrollWidth - container.clientWidth) / 2; }
+    document.getElementById('zoomIn').onclick = () => {
+        let newZoom = scale + 1;
+        if (newZoom <= maxZoom) { scale = newZoom; resizeCanvas(); }
+    };
+    document.getElementById('zoomOut').onclick = () => {
+        let newZoom = scale - 1;
+        if (newZoom >= minZoom) { scale = newZoom; resizeCanvas(); }
+    };
+    document.getElementById('zoomReset').onclick = () => {
+        scale = 4;
+        resizeCanvas();
+        container.scrollTop = (container.scrollHeight - container.clientHeight) / 2;
+        container.scrollLeft = (container.scrollWidth - container.clientWidth) / 2;
+    };
     
-    document.getElementById('zoom-in').addEventListener('click', zoomIn);
-    document.getElementById('zoom-out').addEventListener('click', zoomOut);
-    document.getElementById('zoom-reset').addEventListener('click', zoomReset);
-    
-    // ===================== جلب المناطق المباعة =====================
-    async function fetchAreas() {
-        try {
-            const res = await fetch(`${SERVER_URL}/areas`);
-            const data = await res.json();
-            soldAreas = data.areas || [];
-            document.getElementById('area-count').innerText = soldAreas.length;
-            drawAllAreas();
-        } catch(e) { console.error(e); }
-    }
-    
-    // ===================== الشراء =====================
-    async function createInvoice() {
-        const owner = document.getElementById('owner-name').value.trim();
-        const linkUrl = document.getElementById('owner-url').value.trim();
-        const imageFile = document.getElementById('owner-image').files[0];
+    // ===================== حفظ الإعلان (بدون دفع) =====================
+    function saveAd() {
+        const t = texts[currentLang];
+        const owner = document.getElementById('ownerName').value.trim();
+        const linkUrl = document.getElementById('ownerUrl').value.trim();
+        const imageFile = document.getElementById('ownerImage').files[0];
         
         if (!owner || !linkUrl || !imageFile) {
-            alert("❌ الرجاء إدخال جميع البيانات (الاسم، الرابط، الصورة)");
+            alert(t.fillError);
             return;
         }
         
         const loading = document.getElementById('loading');
         loading.style.display = 'block';
         
-        const formData = new FormData();
-        formData.append('x', selectedArea.x);
-        formData.append('y', selectedArea.y);
-        formData.append('width', selectedArea.width);
-        formData.append('height', selectedArea.height);
-        formData.append('link_url', linkUrl);
-        formData.append('owner', owner);
-        formData.append('image', imageFile);
-        
-        try {
-            const res = await fetch(`${SERVER_URL}/create-invoice`, {
-                method: 'POST',
-                body: formData
-            });
-            const data = await res.json();
-            if (data.pay_url) {
-                loading.style.display = 'none';
-                closeModal();
-                window.open(data.pay_url, '_blank');
-                checkPaymentStatus(data.invoice_id);
-            } else {
-                loading.style.display = 'none';
-                alert("Error creating invoice");
-            }
-        } catch(e) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const newArea = {
+                id: nextId++,
+                x: selectedArea.x,
+                y: selectedArea.y,
+                width: selectedArea.width,
+                height: selectedArea.height,
+                image_url: e.target.result,
+                link_url: linkUrl,
+                owner: owner
+            };
+            soldAreas.push(newArea);
+            saveToLocalStorage();
+            document.getElementById('areaCount').innerText = soldAreas.length;
+            drawAllAreas();
+            
             loading.style.display = 'none';
-            alert("Network error");
-        }
-    }
-    
-    async function checkPaymentStatus(invoiceId) {
-        const loading = document.getElementById('loading');
-        loading.style.display = 'block';
-        loading.innerText = '⏳ في انتظار تأكيد الدفع...';
-        for (let i = 0; i < 60; i++) {
-            await new Promise(r => setTimeout(r, 5000));
-            try {
-                const res = await fetch(`${SERVER_URL}/check-invoice/${invoiceId}`);
-                const data = await res.json();
-                if (data.status === 'paid') {
-                    loading.style.display = 'none';
-                    alert('✅ تم تأكيد الدفع! سيظهر إعلانك على الجدار.');
-                    fetchAreas();
-                    return;
-                }
-            } catch(e) {}
-        }
-        loading.style.display = 'none';
-        alert("Payment not confirmed within 5 minutes");
+            closeModal();
+            alert(t.saveSuccess);
+        };
+        reader.readAsDataURL(imageFile);
     }
     
     function closeModal() {
-        document.getElementById('purchase-modal').style.display = 'none';
-        document.getElementById('owner-name').value = '';
-        document.getElementById('owner-url').value = '';
-        document.getElementById('owner-image').value = '';
+        document.getElementById('modal').style.display = 'none';
+        document.getElementById('ownerName').value = '';
+        document.getElementById('ownerUrl').value = '';
+        document.getElementById('ownerImage').value = '';
         selectedArea = null;
     }
     
-    document.getElementById('confirm-purchase').onclick = createInvoice;
+    document.getElementById('confirmBtn').onclick = saveAd;
+    document.getElementById('cancelBtn').onclick = closeModal;
+    document.getElementById('langBtn').onclick = toggleLanguage;
+    
+    // ===================== النقر على الإعلانات لفتح الرابط =====================
+    canvas.addEventListener('click', (e) => {
+        const { x, y } = getCanvasCoords(e);
+        for (const area of soldAreas) {
+            if (x >= area.x && x < area.x + area.width && y >= area.y && y < area.y + area.height) {
+                window.open(area.link_url, '_blank');
+                break;
+            }
+        }
+    });
     
     // ===================== التشغيل =====================
+    updateLanguage();
     resizeCanvas();
-    fetchAreas();
+    loadFromLocalStorage();
 </script>
 </body>
 </html>
