@@ -2,14 +2,15 @@
 import os
 import sqlite3
 import json
-import shutil
 import requests
 import base64
 import random
 import string
+import shutil
 from datetime import datetime
 from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles  # ✅ إضافة مهمة
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional
@@ -21,6 +22,9 @@ UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 app = FastAPI()
+
+# ✅ تفعيل المجلد الساكن (StaticFiles) لجعل الصور متاحة للجميع
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # CORS
 app.add_middleware(
@@ -37,7 +41,6 @@ DB_PATH = "/tmp/advertising.db" if os.environ.get("RAILWAY") else "advertising.d
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    # جدول المناطق المباعة
     c.execute('''CREATE TABLE IF NOT EXISTS sold_areas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         x INTEGER NOT NULL,
@@ -50,7 +53,6 @@ def init_db():
         amount REAL NOT NULL,
         purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )''')
-    # جدول الفواتير
     c.execute('''CREATE TABLE IF NOT EXISTS invoices (
         invoice_id TEXT PRIMARY KEY,
         x INTEGER NOT NULL,
@@ -121,7 +123,6 @@ def check_invoice_status(invoice_id: str) -> str:
         return "pending"
 
 def is_area_available(x, y, width, height):
-    """التحقق من أن المنطقة المحددة غير مباعة"""
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("SELECT x, y, width, height FROM sold_areas")
@@ -168,17 +169,20 @@ async def create_invoice(
     owner: str = Form(...),
     image: UploadFile = File(...)
 ):
-    # التحقق من أن المنطقة غير مباعة
     if not is_area_available(x, y, width, height):
         raise HTTPException(status_code=400, detail="Area already sold")
     
-    # حساب السعر
     pixels_count = width * height
     amount = pixels_count * 1.0
     
-    # قراءة الصورة وتحويلها إلى base64 للتخزين المؤقت
-    image_data = await image.read()
-    image_base64 = base64.b64encode(image_data).decode('utf-8')
+    # حفظ الصورة مباشرة
+    image_filename = f"area_{x}_{y}_{width}_{height}_{int(datetime.now().timestamp())}.png"
+    image_path = os.path.join(UPLOAD_FOLDER, image_filename)
+    
+    with open(image_path, "wb") as f:
+        shutil.copyfileobj(image.file, f)
+    
+    image_url = f"/uploads/{image_filename}"
     
     # إنشاء فاتورة
     invoice_id, pay_url = create_crypto_invoice(amount, f"Advertising Area ({width}x{height}) - {pixels_count} pixels")
@@ -186,11 +190,11 @@ async def create_invoice(
     if not invoice_id:
         raise HTTPException(status_code=500, detail="Failed to create invoice")
     
-    # حفظ معلومات الفاتورة
+    # حفظ معلومات الفاتورة والصورة
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("INSERT INTO invoices (invoice_id, x, y, width, height, image_data, link_url, owner, amount, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-              (invoice_id, x, y, width, height, image_base64, link_url, owner, amount, "pending"))
+              (invoice_id, x, y, width, height, image_url, link_url, owner, amount, "pending"))
     conn.commit()
     conn.close()
     
@@ -206,15 +210,7 @@ def check_invoice(invoice_id: str):
         c.execute("SELECT x, y, width, height, image_data, link_url, owner, amount FROM invoices WHERE invoice_id = ? AND status = 'pending'", (invoice_id,))
         invoice = c.fetchone()
         if invoice:
-            x, y, width, height, image_data, link_url, owner, amount = invoice
-            # حفظ الصورة كملف
-            image_bytes = base64.b64decode(image_data)
-            image_filename = f"area_{x}_{y}_{width}_{height}_{invoice_id}.png"
-            image_path = os.path.join(UPLOAD_FOLDER, image_filename)
-            with open(image_path, "wb") as f:
-                f.write(image_bytes)
-            image_url = f"/uploads/{image_filename}"
-            
+            x, y, width, height, image_url, link_url, owner, amount = invoice
             c.execute("INSERT INTO sold_areas (x, y, width, height, image_url, link_url, owner, amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                       (x, y, width, height, image_url, link_url, owner, amount))
             c.execute("UPDATE invoices SET status = 'paid' WHERE invoice_id = ?", (invoice_id,))
