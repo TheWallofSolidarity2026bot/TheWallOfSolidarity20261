@@ -2,6 +2,7 @@
 import os
 import sqlite3
 import json
+import shutil
 import requests
 import base64
 import random
