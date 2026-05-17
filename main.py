@@ -3,25 +3,20 @@ import os
 import sqlite3
 import json
 import requests
+import base64
 import random
 import string
 from datetime import datetime
-from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import Optional
 
-# ------------------------- التكوين -------------------------
+# ===================== التكوين =====================
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "567216:AAUeBN5UmkXwJOcxI8m0FCpxc42457YEyvU")
-CRYPTOBOT_API = "https://pay.crypt.bot/api"
-
-# الألوان المتاحة (16 لوناً)
-COLORS = {
-    "red": "#e74c3c", "black": "#2c3e50", "white": "#ecf0f1", "green": "#2ecc71",
-    "gold": "#f1c40f", "blue": "#3498db", "orange": "#e67e22", "purple": "#9b59b6",
-    "cyan": "#1abc9c", "pink": "#fd79a8", "brown": "#8B4513", "navy": "#34495e",
-    "lightyellow": "#ffeaa7", "lightgreen": "#55efc4", "lightblue": "#74b9ff", "gray": "#b2bec3"
-}
+CRYPTOBOT_API = "https://pay.crypt.bot/apiadsUPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 app = FastAPI()
 
@@ -34,30 +29,35 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ------------------------- قاعدة البيانات -------------------------
-DB_PATH = "/tmp/pixels.db" if os.environ.get("RAILWAY") else "pixels.db"
+# ===================== قاعدة البيانات =====================
+DB_PATH = "/tmp/advertising.db" if os.environ.get("RAILWAY") else "advertising.db"
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    # جدول البكسلات المباعة (فقط هذه تُحفظ)
-    c.execute('''CREATE TABLE IF NOT EXISTS sold_pixels (
+    # جدول المناطق المباعة
+    c.execute('''CREATE TABLE IF NOT EXISTS sold_areas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         x INTEGER NOT NULL,
         y INTEGER NOT NULL,
-        color TEXT NOT NULL,
+        width INTEGER NOT NULL,
+        height INTEGER NOT NULL,
+        image_url TEXT NOT NULL,
+        link_url TEXT NOT NULL,
         owner TEXT NOT NULL,
-        url TEXT NOT NULL,
-        purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (x, y)
+        amount REAL NOT NULL,
+        purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )''')
     # جدول الفواتير
     c.execute('''CREATE TABLE IF NOT EXISTS invoices (
         invoice_id TEXT PRIMARY KEY,
         x INTEGER NOT NULL,
         y INTEGER NOT NULL,
-        color TEXT NOT NULL,
+        width INTEGER NOT NULL,
+        height INTEGER NOT NULL,
+        image_data TEXT NOT NULL,
+        link_url TEXT NOT NULL,
         owner TEXT NOT NULL,
-        url TEXT NOT NULL,
         amount REAL NOT NULL,
         status TEXT DEFAULT 'pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -67,37 +67,16 @@ def init_db():
 
 init_db()
 
-# ------------------------- WebSocket Manager -------------------------
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: List[WebSocket] = []
-
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections.append(websocket)
-
-    def disconnect(self, websocket: WebSocket):
-        if websocket in self.active_connections:
-            self.active_connections.remove(websocket)
-
-    async def broadcast(self, message: dict):
-        for connection in self.active_connections:
-            try:
-                await connection.send_json(message)
-            except:
-                pass
-
-manager = ConnectionManager()
-
-# ------------------------- النماذج -------------------------
-class PixelPurchase(BaseModel):
+# ===================== النماذج =====================
+class AreaPurchase(BaseModel):
     x: int
     y: int
-    color: str
+    width: int
+    height: int
+    link_url: str
     owner: str
-    url: str
 
-# ------------------------- دوال مساعدة -------------------------
+# ===================== دوال مساعدة =====================
 def generate_demo_invoice():
     demo_id = f"DEMO_{''.join(random.choices(string.ascii_uppercase + string.digits, k=8))}"
     demo_url = f"https://t.me/CryptoBot?start={demo_id}"
@@ -139,82 +118,81 @@ def check_invoice_status(invoice_id: str) -> str:
     except:
         return "pending"
 
-def get_all_sold_pixels():
+def is_area_available(x, y, width, height):
+    """التحقق من أن المنطقة المحددة غير مباعة"""
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("SELECT x, y, color, owner, url FROM sold_pixels")
-    pixels = [{"x": row[0], "y": row[1], "color": row[2], "owner": row[3], "url": row[4]} for row in c.fetchall()]
+    c.execute("SELECT x, y, width, height FROM sold_areas")
+    sold = c.fetchall()
     conn.close()
-    return pixels
+    
+    for sx, sy, sw, sh in sold:
+        if not (x + width <= sx or sx + sw <= x or y + height <= sy or sy + sh <= y):
+            return False
+    return True
 
-def is_pixel_sold(x, y):
+def save_area(x, y, width, height, image_url, link_url, owner, amount):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("SELECT 1 FROM sold_pixels WHERE x = ? AND y = ?", (x, y))
-    result = c.fetchone()
-    conn.close()
-    return result is not None
-
-def save_sold_pixel(x, y, color, owner, url):
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("INSERT INTO sold_pixels (x, y, color, owner, url) VALUES (?, ?, ?, ?, ?)", (x, y, color, owner, url))
+    c.execute("INSERT INTO sold_areas (x, y, width, height, image_url, link_url, owner, amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+              (x, y, width, height, image_url, link_url, owner, amount))
     conn.commit()
     conn.close()
 
-# ------------------------- WebSocket Endpoint -------------------------
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await manager.connect(websocket)
-    try:
-        while True:
-            await websocket.receive_text()
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
+def get_all_areas():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT x, y, width, height, image_url, link_url, owner, amount FROM sold_areas")
+    areas = [{"x": row[0], "y": row[1], "width": row[2], "height": row[3], "image_url": row[4], "link_url": row[5], "owner": row[6], "amount": row[7]} for row in c.fetchall()]
+    conn.close()
+    return areas
 
-# ------------------------- واجهات API -------------------------
+# ===================== واجهات API =====================
 @app.get("/")
 def root():
-    return {"message": "Pixel Wall V2 - Collaborative Drawing", "status": "active"}
+    return {"message": "Advertising Canvas API", "status": "active"}
 
-@app.get("/pixels")
-def get_pixels():
-    return {"pixels": get_all_sold_pixels()}
+@app.get("/areas")
+def get_areas():
+    return {"areas": get_all_areas()}
 
 @app.post("/create-invoice")
-def create_invoice(purchase: PixelPurchase):
-    if is_pixel_sold(purchase.x, purchase.y):
-        raise HTTPException(status_code=400, detail="Pixel already sold")
+async def create_invoice(
+    x: int = Form(...),
+    y: int = Form(...),
+    width: int = Form(...),
+    height: int = Form(...),
+    link_url: str = Form(...),
+    owner: str = Form(...),
+    image: UploadFile = File(...)
+):
+    # التحقق من أن المنطقة غير مباعة
+    if not is_area_available(x, y, width, height):
+        raise HTTPException(status_code=400, detail="Area already sold")
     
-    # أول بكسل مجاني (0,0)
-    if purchase.x == 0 and purchase.y == 0:
-        save_sold_pixel(purchase.x, purchase.y, purchase.color, purchase.owner, purchase.url)
-        # بث التحديث لجميع المستخدمين
-        import asyncio
-        asyncio.create_task(manager.broadcast({
-            "type": "new_pixel",
-            "x": purchase.x,
-            "y": purchase.y,
-            "color": purchase.color,
-            "owner": purchase.owner,
-            "url": purchase.url
-        }))
-        return {"invoice_id": "free", "pay_url": None, "amount": 0, "free": True}
+    # حساب السعر
+    pixels_count = width * height
+    amount = pixels_count * 1.0
     
-    amount = 1.0
-    invoice_id, pay_url = create_crypto_invoice(amount, f"Pixel ({purchase.x},{purchase.y})")
+    # قراءة الصورة وتحويلها إلى base64 للتخزين المؤقت
+    image_data = await image.read()
+    image_base64 = base64.b64encode(image_data).decode('utf-8')
+    
+    # إنشاء فاتورة
+    invoice_id, pay_url = create_crypto_invoice(amount, f"Advertising Area ({width}x{height}) - {pixels_count} pixels")
     
     if not invoice_id:
         raise HTTPException(status_code=500, detail="Failed to create invoice")
     
+    # حفظ معلومات الفاتورة
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("INSERT INTO invoices (invoice_id, x, y, color, owner, url, amount, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-              (invoice_id, purchase.x, purchase.y, purchase.color, purchase.owner, purchase.url, amount, "pending"))
+    c.execute("INSERT INTO invoices (invoice_id, x, y, width, height, image_data, link_url, owner, amount, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+              (invoice_id, x, y, width, height, image_base64, link_url, owner, amount, "pending"))
     conn.commit()
     conn.close()
     
-    return {"invoice_id": invoice_id, "pay_url": pay_url, "amount": amount, "free": False}
+    return {"invoice_id": invoice_id, "pay_url": pay_url, "amount": amount, "pixels": pixels_count}
 
 @app.get("/check-invoice/{invoice_id}")
 def check_invoice(invoice_id: str):
@@ -223,58 +201,25 @@ def check_invoice(invoice_id: str):
     if status == "paid":
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
-        c.execute("SELECT x, y, color, owner, url FROM invoices WHERE invoice_id = ? AND status = 'pending'", (invoice_id,))
+        c.execute("SELECT x, y, width, height, image_data, link_url, owner, amount FROM invoices WHERE invoice_id = ? AND status = 'pending'", (invoice_id,))
         invoice = c.fetchone()
         if invoice:
-            x, y, color, owner, url = invoice
-            c.execute("INSERT INTO sold_pixels (x, y, color, owner, url) VALUES (?, ?, ?, ?, ?)", (x, y, color, owner, url))
+            x, y, width, height, image_data, link_url, owner, amount = invoice
+            # حفظ الصورة كملف
+            image_bytes = base64.b64decode(image_data)
+            image_filename = f"area_{x}_{y}_{width}_{height}_{invoice_id}.png"
+            image_path = os.path.join(UPLOAD_FOLDER, image_filename)
+            with open(image_path, "wb") as f:
+                f.write(image_bytes)
+            image_url = f"/uploads/{image_filename}"
+            
+            c.execute("INSERT INTO sold_areas (x, y, width, height, image_url, link_url, owner, amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                      (x, y, width, height, image_url, link_url, owner, amount))
             c.execute("UPDATE invoices SET status = 'paid' WHERE invoice_id = ?", (invoice_id,))
             conn.commit()
-            
-            # بث التحديث لجميع المستخدمين
-            import asyncio
-            asyncio.create_task(manager.broadcast({
-                "type": "new_pixel",
-                "x": x,
-                "y": y,
-                "color": color,
-                "owner": owner,
-                "url": url
-            }))
         conn.close()
     
     return {"status": status, "invoice_id": invoice_id}
-
-@app.post("/webhook")
-async def webhook(request: Request):
-    try:
-        body = await request.json()
-        if body.get("event") == "invoice_paid":
-            invoice_id = body.get("data", {}).get("invoice_id")
-            conn = sqlite3.connect(DB_PATH)
-            c = conn.cursor()
-            c.execute("SELECT x, y, color, owner, url FROM invoices WHERE invoice_id = ? AND status = 'pending'", (invoice_id,))
-            invoice = c.fetchone()
-            if invoice:
-                x, y, color, owner, url = invoice
-                c.execute("INSERT INTO sold_pixels (x, y, color, owner, url) VALUES (?, ?, ?, ?, ?)", (x, y, color, owner, url))
-                c.execute("UPDATE invoices SET status = 'paid' WHERE invoice_id = ?", (invoice_id,))
-                conn.commit()
-                
-                # بث التحديث لجميع المستخدمين
-                import asyncio
-                asyncio.create_task(manager.broadcast({
-                    "type": "new_pixel",
-                    "x": x,
-                    "y": y,
-                    "color": color,
-                    "owner": owner,
-                    "url": url
-                }))
-            conn.close()
-        return {"status": "ok"}
-    except:
-        return {"status": "error"}
 
 if __name__ == "__main__":
     import uvicorn
