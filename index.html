@@ -1,12 +1,24 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" id="main-html">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>جدار التضامن 2026 - النسخة التجريبية المجانية</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
         body { background: linear-gradient(135deg, #0a2e0a 0%, #1a1a2e 100%); min-height: 100vh; font-family: 'Tajawal', 'Cairo', sans-serif; color: #fff; overflow: hidden; }
+        
+        .badge { position: fixed; top: 60px; left: 15px; background: #27ae60; color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: bold; z-index: 2100; }
+        .canvas-container { width: 100vw; height: 100vh; overflow: auto; cursor: crosshair; background: #111; margin-top: 50px; -webkit-overflow-scrolling: touch; }
+        
+        canvas {
+            display: block;
+            background: #2d2d2d;
+            cursor: crosshair;
+            image-rendering: crisp-edges;
+            image-rendering: pixelated;
+            -ms-interpolation-mode: nearest-neighbor;
+        }
         
         .top-bar { position: fixed; top: 0; left: 0; right: 0; background: rgba(0,0,0,0.85); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; z-index: 2000; backdrop-filter: blur(5px); }
         .lang-btn { background: #e74c3c; border: none; padding: 5px 15px; border-radius: 20px; color: #fff; cursor: pointer; font-weight: bold; }
@@ -17,9 +29,6 @@
         .zoom-btn { width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,0.8); border: 2px solid #e74c3c; color: #e74c3c; font-size: 24px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         .zoom-btn:hover { background: #e74c3c; color: #fff; }
         .zoom-level { font-size: 11px; text-align: center; margin-top: 5px; color: #e74c3c; background: rgba(0,0,0,0.6); padding: 4px 6px; border-radius: 15px; }
-        
-        .canvas-container { width: 100vw; height: 100vh; overflow: auto; cursor: crosshair; background: #111; margin-top: 50px; }
-        #canvas { display: block; background: #2d2d2d; cursor: crosshair; }
         
         .selection-info { position: fixed; background: rgba(0,0,0,0.85); color: #e74c3c; padding: 8px 15px; border-radius: 20px; font-size: 13px; font-weight: bold; z-index: 1500; display: none; pointer-events: none; }
         
@@ -38,6 +47,8 @@
     </style>
 </head>
 <body>
+
+<div class="badge">🎁 النسخة المجانية | تجريبية | لا دفع</div>
 
 <div class="top-bar">
     <button class="lang-btn" id="langBtn">English</button>
@@ -71,14 +82,14 @@
         <input type="text" id="ownerName" placeholder="اسمك أو معرفك">
         <input type="url" id="ownerUrl" placeholder="الرابط (موقعك أو حسابك)">
         <input type="file" id="ownerImage" accept="image/png,image/jpeg,image/jpg">
-        <button id="confirmBtn">✅ حفظ الإعلان</button>
+        <button id="confirmBtn">✅ حفظ الإعلان (مجاني)</button>
         <button class="cancel-btn" id="cancelBtn">❌ إلغاء</button>
     </div>
 </div>
 
 <script>
-    // ===================== الإعدادات =====================
-    const CANVAS_SIZE = 400;  // 400×400 = 160,000 بكسل (خفيف وسريع)
+    // ✅ النسخة المجانية - تعمل محلياً (LocalStorage) بدون سيرفر
+    const CANVAS_SIZE = 400;
     let scale = 4;
     let minZoom = 2, maxZoom = 20;
     let ctx, canvas, container;
@@ -86,31 +97,23 @@
     let currentLang = 'ar';
     let nextId = 1;
     
-    // متغيرات تحديد المساحة
     let isSelecting = false;
     let startX = 0, startY = 0;
     let endX = 0, endY = 0;
     let selectedArea = null;
     
-    // ===================== الترجمة =====================
     const texts = {
-        ar: {
-            langBtn: "English", statSold: "إعلان", statFree: "مجاني",
+        ar: { langBtn: "English", statSold: "إعلان", statFree: "مجاني",
             instruction: "🖱️ اسحب لتحديد مساحة إعلانية", welcome: "🇵🇸 النسخة المجانية - جدار التضامن 2026 🇵🇸",
-            modalTitle: "أضف إعلانك", confirm: "✅ حفظ الإعلان", cancel: "❌ إلغاء",
-            fillError: "❌ الرجاء إدخال جميع البيانات (الاسم، الرابط، الصورة)",
-            areaError: "❌ هذه المساحة متداخلة مع إعلان موجود! اختر مساحة أخرى.",
-            saveSuccess: "✅ تم حفظ إعلانك بنجاح!",
-            loadError: "❌ خطأ في تحميل البيانات"
+            modalTitle: "أضف إعلانك", confirm: "✅ حفظ الإعلان (مجاني)", cancel: "❌ إلغاء",
+            fillError: "❌ الرجاء إدخال جميع البيانات", areaError: "❌ هذه المساحة متداخلة مع إعلان موجود!",
+            saveSuccess: "✅ تم حفظ إعلانك بنجاح!"
         },
-        en: {
-            langBtn: "العربية", statSold: "Ads", statFree: "Free",
+        en: { langBtn: "العربية", statSold: "Ads", statFree: "Free",
             instruction: "🖱️ Drag to select an advertising area", welcome: "🇵🇸 Free Version - The Wall of Solidarity 2026 🇵🇸",
-            modalTitle: "Add Your Ad", confirm: "✅ Save Ad", cancel: "❌ Cancel",
-            fillError: "❌ Please fill all fields (name, URL, image)",
-            areaError: "❌ This area overlaps with an existing ad! Choose another area.",
-            saveSuccess: "✅ Your ad has been saved successfully!",
-            loadError: "❌ Error loading data"
+            modalTitle: "Add Your Ad", confirm: "✅ Save Ad (Free)", cancel: "❌ Cancel",
+            fillError: "❌ Please fill all fields", areaError: "❌ This area overlaps with an existing ad!",
+            saveSuccess: "✅ Your ad has been saved successfully!"
         }
     };
     
@@ -126,12 +129,8 @@
         document.getElementById('cancelBtn').innerHTML = t.cancel;
     }
     
-    function toggleLanguage() {
-        currentLang = currentLang === 'ar' ? 'en' : 'ar';
-        updateLanguage();
-    }
+    function toggleLanguage() { currentLang = currentLang === 'ar' ? 'en' : 'ar'; updateLanguage(); }
     
-    // ===================== إعدادات اللوحة =====================
     canvas = document.getElementById('canvas');
     container = document.getElementById('canvasContainer');
     ctx = canvas.getContext('2d');
@@ -142,48 +141,34 @@
         canvas.style.width = `${CANVAS_SIZE * scale}px`;
         canvas.style.height = `${CANVAS_SIZE * scale}px`;
         drawAllAreas();
-        const percent = Math.round((scale / 4) * 100);
-        document.getElementById('zoomLevel').innerHTML = `${percent}%`;
+        document.getElementById('zoomLevel').innerHTML = `${Math.round((scale/4)*100)}%`;
     }
     
     function drawAllAreas() {
         ctx.fillStyle = "#2d2d2d";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
         for (const area of soldAreas) {
-            try {
-                const img = new Image();
-                img.onload = () => {
-                    ctx.drawImage(img, area.x * scale, area.y * scale, area.width * scale, area.height * scale);
-                };
-                img.src = area.image_url;
-            } catch(e) {}
+            const img = new Image();
+            img.onload = () => ctx.drawImage(img, area.x * scale, area.y * scale, area.width * scale, area.height * scale);
+            img.src = area.image_url;
         }
     }
     
-    // ===================== حفظ وتحميل البيانات (LocalStorage) =====================
     function saveToLocalStorage() {
-        const data = {
-            areas: soldAreas,
-            nextId: nextId
-        };
-        localStorage.setItem('solidarity_wall', JSON.stringify(data));
+        localStorage.setItem('solidarity_wall_free', JSON.stringify({ areas: soldAreas, nextId: nextId }));
     }
     
     function loadFromLocalStorage() {
-        const saved = localStorage.getItem('solidarity_wall');
+        const saved = localStorage.getItem('solidarity_wall_free');
         if (saved) {
-            try {
-                const data = JSON.parse(saved);
-                soldAreas = data.areas || [];
-                nextId = data.nextId || soldAreas.length + 1;
-                document.getElementById('areaCount').innerText = soldAreas.length;
-                drawAllAreas();
-            } catch(e) {}
+            const data = JSON.parse(saved);
+            soldAreas = data.areas || [];
+            nextId = data.nextId || soldAreas.length + 1;
+            document.getElementById('areaCount').innerText = soldAreas.length;
+            drawAllAreas();
         }
     }
     
-    // ===================== تحديد المساحة =====================
     function getCanvasCoords(e) {
         const rect = canvas.getBoundingClientRect();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -194,67 +179,35 @@
     }
     
     function drawSelection() {
-        const rectX = Math.min(startX, endX);
-        const rectY = Math.min(startY, endY);
-        const rectW = Math.abs(endX - startX) + 1;
-        const rectH = Math.abs(endY - startY) + 1;
-        
+        const rectX = Math.min(startX, endX), rectY = Math.min(startY, endY);
+        const rectW = Math.abs(endX - startX) + 1, rectH = Math.abs(endY - startY) + 1;
         ctx.fillStyle = "rgba(231,76,60,0.3)";
         ctx.fillRect(rectX * scale, rectY * scale, rectW * scale, rectH * scale);
         ctx.strokeStyle = "#e74c3c";
-        ctx.lineWidth = 2;
         ctx.strokeRect(rectX * scale, rectY * scale, rectW * scale, rectH * scale);
-        
-        const pixels = rectW * rectH;
-        const infoDiv = document.getElementById('selectionInfo');
-        infoDiv.style.display = 'block';
-        infoDiv.innerHTML = `${rectW}x${rectH} (${pixels} بكسل)`;
-        infoDiv.style.left = (endX * scale + 20) + 'px';
-        infoDiv.style.top = (endY * scale - 30) + 'px';
+        const info = document.getElementById('selectionInfo');
+        info.style.display = 'block';
+        info.innerHTML = `${rectW}x${rectH} (${rectW*rectH} بكسل)`;
+        info.style.left = (endX * scale + 20) + 'px';
+        info.style.top = (endY * scale - 30) + 'px';
     }
     
-    function onMouseDown(e) {
-        e.preventDefault();
-        const { x, y } = getCanvasCoords(e);
-        startX = x;
-        startY = y;
-        endX = x;
-        endY = y;
-        isSelecting = true;
-    }
-    
-    function onMouseMove(e) {
-        if (!isSelecting) return;
-        e.preventDefault();
-        const { x, y } = getCanvasCoords(e);
-        endX = Math.min(CANVAS_SIZE - 1, Math.max(0, x));
-        endY = Math.min(CANVAS_SIZE - 1, Math.max(0, y));
-        drawAllAreas();
-        drawSelection();
-    }
-    
+    function onMouseDown(e) { e.preventDefault(); const { x, y } = getCanvasCoords(e); startX = x; startY = y; endX = x; endY = y; isSelecting = true; }
+    function onMouseMove(e) { if (!isSelecting) return; e.preventDefault(); const { x, y } = getCanvasCoords(e); endX = Math.min(CANVAS_SIZE-1, Math.max(0, x)); endY = Math.min(CANVAS_SIZE-1, Math.max(0, y)); drawAllAreas(); drawSelection(); }
     function onMouseUp(e) {
         if (!isSelecting) return;
         isSelecting = false;
-        
-        const rectX = Math.min(startX, endX);
-        const rectY = Math.min(startY, endY);
-        const rectW = Math.abs(endX - startX) + 1;
-        const rectH = Math.abs(endY - startY) + 1;
-        
+        const rectX = Math.min(startX, endX), rectY = Math.min(startY, endY);
+        const rectW = Math.abs(endX - startX) + 1, rectH = Math.abs(endY - startY) + 1;
         if (rectW > 0 && rectH > 0) {
             let overlap = false;
             for (const area of soldAreas) {
-                if (!(rectX + rectW <= area.x || area.x + area.width <= rectX ||
-                      rectY + rectH <= area.y || area.y + area.height <= rectY)) {
-                    overlap = true;
-                    break;
+                if (!(rectX + rectW <= area.x || area.x + area.width <= rectX || rectY + rectH <= area.y || area.y + area.height <= rectY)) {
+                    overlap = true; break;
                 }
             }
-            if (overlap) {
-                alert(texts[currentLang].areaError);
-            } else {
-                selectedArea = { x: rectX, y: rectY, width: rectW, height: rectH };
+            if (overlap) alert(texts[currentLang].areaError);
+            else { selectedArea = { x: rectX, y: rectY, width: rectW, height: rectH };
                 document.getElementById('modalSize').innerHTML = `المساحة: ${rectW}x${rectH} (${rectW*rectH} بكسل)`;
                 document.getElementById('modal').style.display = 'flex';
             }
@@ -270,54 +223,25 @@
     canvas.addEventListener('touchmove', onMouseMove);
     canvas.addEventListener('touchend', onMouseUp);
     
-    // ===================== التكبير والتصغير =====================
-    document.getElementById('zoomIn').onclick = () => {
-        let newZoom = scale + 1;
-        if (newZoom <= maxZoom) { scale = newZoom; resizeCanvas(); }
-    };
-    document.getElementById('zoomOut').onclick = () => {
-        let newZoom = scale - 1;
-        if (newZoom >= minZoom) { scale = newZoom; resizeCanvas(); }
-    };
-    document.getElementById('zoomReset').onclick = () => {
-        scale = 4;
-        resizeCanvas();
-        container.scrollTop = (container.scrollHeight - container.clientHeight) / 2;
-        container.scrollLeft = (container.scrollWidth - container.clientWidth) / 2;
-    };
+    document.getElementById('zoomIn').onclick = () => { let n = scale + 1; if (n <= maxZoom) { scale = n; resizeCanvas(); } };
+    document.getElementById('zoomOut').onclick = () => { let n = scale - 1; if (n >= minZoom) { scale = n; resizeCanvas(); } };
+    document.getElementById('zoomReset').onclick = () => { scale = 4; resizeCanvas(); container.scrollTop = (container.scrollHeight - container.clientHeight) / 2; container.scrollLeft = (container.scrollWidth - container.clientWidth) / 2; };
     
-    // ===================== حفظ الإعلان (بدون دفع) =====================
     function saveAd() {
         const t = texts[currentLang];
         const owner = document.getElementById('ownerName').value.trim();
         const linkUrl = document.getElementById('ownerUrl').value.trim();
         const imageFile = document.getElementById('ownerImage').files[0];
-        
-        if (!owner || !linkUrl || !imageFile) {
-            alert(t.fillError);
-            return;
-        }
-        
+        if (!owner || !linkUrl || !imageFile) { alert(t.fillError); return; }
         const loading = document.getElementById('loading');
         loading.style.display = 'block';
-        
         const reader = new FileReader();
         reader.onload = function(e) {
-            const newArea = {
-                id: nextId++,
-                x: selectedArea.x,
-                y: selectedArea.y,
-                width: selectedArea.width,
-                height: selectedArea.height,
-                image_url: e.target.result,
-                link_url: linkUrl,
-                owner: owner
-            };
+            const newArea = { id: nextId++, x: selectedArea.x, y: selectedArea.y, width: selectedArea.width, height: selectedArea.height, image_url: e.target.result, link_url: linkUrl, owner: owner };
             soldAreas.push(newArea);
             saveToLocalStorage();
             document.getElementById('areaCount').innerText = soldAreas.length;
             drawAllAreas();
-            
             loading.style.display = 'none';
             closeModal();
             alert(t.saveSuccess);
@@ -337,18 +261,15 @@
     document.getElementById('cancelBtn').onclick = closeModal;
     document.getElementById('langBtn').onclick = toggleLanguage;
     
-    // ===================== النقر على الإعلانات لفتح الرابط =====================
     canvas.addEventListener('click', (e) => {
         const { x, y } = getCanvasCoords(e);
         for (const area of soldAreas) {
             if (x >= area.x && x < area.x + area.width && y >= area.y && y < area.y + area.height) {
-                window.open(area.link_url, '_blank');
-                break;
+                window.open(area.link_url, '_blank'); break;
             }
         }
     });
     
-    // ===================== التشغيل =====================
     updateLanguage();
     resizeCanvas();
     loadFromLocalStorage();
