@@ -1,66 +1,49 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" id="main-html">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>جدار التضامن 2026 - مليون بكسل تفاعلي</title>
+    <title>جدار الإعلانات - مليون بكسل إعلاني</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
         body { background: linear-gradient(135deg, #0a2e0a 0%, #1a1a2e 100%); min-height: 100vh; font-family: 'Tajawal', 'Cairo', sans-serif; color: #fff; overflow: hidden; }
         
-        /* واجهة التحكم العلوية */
         .controls { position: fixed; top: 10px; left: 10px; right: 10px; z-index: 2000; display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; background: rgba(0,0,0,0.7); padding: 8px 12px; border-radius: 30px; backdrop-filter: blur(5px); }
-        .lang-switch { background: #e74c3c; border: none; padding: 5px 12px; border-radius: 20px; color: #fff; cursor: pointer; font-weight: bold; }
         .stats { display: flex; gap: 15px; }
         .stat { font-size: 12px; }
         .stat span { color: #e74c3c; font-weight: bold; }
         
-        /* أزرار التكبير والتصغير (جانب الشاشة) */
         .zoom-controls { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
-        .zoom-btn { width: 45px; height: 45px; border-radius: 50%; background: rgba(0,0,0,0.8); border: 2px solid #e74c3c; color: #e74c3c; font-size: 24px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: 0.2s; }
-        .zoom-btn:hover { background: #e74c3c; color: #fff; transform: scale(1.05); }
-        .zoom-level { font-size: 12px; text-align: center; margin-top: 5px; color: #e74c3c; background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 20px; }
+        .zoom-btn { width: 45px; height: 45px; border-radius: 50%; background: rgba(0,0,0,0.8); border: 2px solid #e74c3c; color: #e74c3c; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .zoom-level { font-size: 12px; text-align: center; margin-top: 5px; color: #e74c3c; }
         
-        /* لوحة الألوان */
-        .color-palette { position: fixed; bottom: 10px; left: 10px; right: 10px; z-index: 2000; background: rgba(0,0,0,0.85); padding: 8px; border-radius: 30px; display: flex; gap: 6px; overflow-x: auto; justify-content: center; backdrop-filter: blur(5px); }
-        .color { width: 35px; height: 35px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.5); flex-shrink: 0; transition: 0.1s; }
-        .color.active { border-color: #e74c3c; box-shadow: 0 0 10px #e74c3c; transform: scale(1.05); }
+        .canvas-container { width: 100vw; height: 100vh; overflow: auto; cursor: crosshair; background: #111; }
+        #canvas { display: block; background: #2d2d2d; cursor: crosshair; }
         
-        /* حاوية اللوحة */
-        .canvas-container { width: 100vw; height: 100vh; overflow: auto; cursor: grab; background: #111; }
-        .canvas-container:active { cursor: grabbing; }
+        /* واجهة تحديد المساحة */
+        .selection-overlay { position: fixed; border: 2px dashed #e74c3c; background: rgba(231,76,60,0.3); pointer-events: none; z-index: 1500; display: none; }
+        .selection-info { position: fixed; background: rgba(0,0,0,0.8); color: #fff; padding: 5px 10px; border-radius: 10px; font-size: 12px; z-index: 1500; display: none; }
         
-        /* اللوحة */
-        #canvas { display: block; margin: 0; background: #2d2d2d; }
-        
-        /* روابط التواصل */
-        .social-section { position: fixed; bottom: 80px; left: 0; right: 0; text-align: center; padding: 10px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 2000; }
-        .social-section h3 { font-size: 14px; margin-bottom: 8px; color: #e74c3c; }
-        .social-icons { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
-        .social-icons a { color: #fff; text-decoration: none; padding: 5px 15px; border-radius: 20px; background: rgba(255,255,255,0.1); font-size: 12px; transition: 0.2s; }
-        .social-icons a:hover { background: #e74c3c; transform: scale(1.05); }
+        .purchase-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); justify-content: center; align-items: center; z-index: 3000; }
+        .modal-content { background: #1a2e1a; padding: 20px; border-radius: 20px; border: 2px solid #e74c3c; width: 90%; max-width: 400px; text-align: center; }
+        .modal-content input, .modal-content file { width: 100%; padding: 8px; margin: 8px 0; background: #0f1a0f; border: 1px solid #e74c3c; border-radius: 8px; color: #fff; }
+        .modal-content button { background: #e74c3c; color: #fff; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 8px; }
         
         .loading { position: fixed; bottom: 20px; right: 20px; background: #e74c3c; padding: 6px 12px; border-radius: 20px; font-size: 11px; display: none; z-index: 2100; }
         
-        .purchase-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); justify-content: center; align-items: center; z-index: 3000; }
-        .modal-content { background: #1a2e1a; padding: 20px; border-radius: 20px; border: 2px solid #e74c3c; width: 90%; max-width: 350px; text-align: center; }
-        .modal-content input { width: 100%; padding: 8px; margin: 8px 0; background: #0f1a0f; border: 1px solid #e74c3c; border-radius: 8px; color: #fff; }
-        .modal-content button { background: #e74c3c; color: #fff; border: none; padding: 8px; border-radius: 8px; cursor: pointer; margin-top: 8px; width: 100%; }
-        
-        @media (max-width: 768px) { .color { width: 30px; height: 30px; } .controls { font-size: 10px; } .zoom-btn { width: 40px; height: 40px; font-size: 20px; } .social-section { bottom: 70px; } }
+        @media (max-width: 768px) { .controls { font-size: 10px; } .zoom-btn { width: 40px; height: 40px; } }
     </style>
 </head>
 <body>
 
 <div class="controls">
-    <button class="lang-switch" id="lang-btn" onclick="toggleLanguage()">English</button>
     <div class="stats">
-        <div class="stat">🎨 <span id="pixel-count">0</span> / 1,000,000</div>
-        <div class="stat">💰 <span id="price">1</span>$</div>
+        <div class="stat">📊 المساحة المباعة: <span id="area-count">0</span></div>
+        <div class="stat">💰 السعر: 1$ / بكسل</div>
     </div>
+    <div class="stat">🖱️ اسحب لتحديد مساحة إعلانية</div>
 </div>
 
-<!-- أزرار التكبير والتصغير -->
 <div class="zoom-controls">
     <div class="zoom-btn" id="zoom-in">+</div>
     <div class="zoom-btn" id="zoom-out">-</div>
@@ -68,128 +51,166 @@
     <div class="zoom-level" id="zoom-level">100%</div>
 </div>
 
-<!-- لوحة الألوان -->
-<div class="color-palette" id="color-palette"></div>
-
-<!-- حاوية اللوحة -->
 <div class="canvas-container" id="canvas-container">
     <canvas id="canvas"></canvas>
 </div>
 
-<!-- روابط التواصل الاجتماعي -->
-<div class="social-section">
-    <h3 id="social-title">📢 تابعنا على وسائل التواصل</h3>
-    <div class="social-icons">
-        <a href="https://instagram.com/yourusername" target="_blank" id="social-instagram">📷 Instagram</a>
-        <a href="https://discord.gg/yourinvite" target="_blank" id="social-discord">💬 Discord</a>
-        <a href="https://t.me/yourchannel" target="_blank" id="social-telegram">📨 Telegram</a>
-    </div>
-</div>
+<div class="selection-overlay" id="selection-overlay"></div>
+<div class="selection-info" id="selection-info">0x0 (0 بكسل = 0$)</div>
 
 <div class="loading" id="loading">⏳ جاري المعالجة...</div>
 
 <div id="purchase-modal" class="purchase-modal">
     <div class="modal-content">
         <div style="font-size: 40px;">🇵🇸</div>
-        <h3 id="modal-title">اشتر هذا البكسل</h3>
-        <p id="modal-desc">بعد الشراء، سيظهر لونك ورابطك للجميع</p>
+        <h3>اشتر هذه المساحة الإعلانية</h3>
+        <p id="modal-size">المساحة: 0x0 (0 بكسل)</p>
+        <p id="modal-price">السعر: 0$</p>
         <input type="text" id="owner-name" placeholder="اسمك أو معرفك">
-        <input type="url" id="owner-url" placeholder="رابط حسابك">
-        <button id="confirm-purchase">✅ تأكيد الشراء (1$)</button>
+        <input type="url" id="owner-url" placeholder="الرابط (موقعك أو حسابك)">
+        <input type="file" id="owner-image" accept="image/png,image/jpeg,image/jpg">
+        <button id="confirm-purchase">✅ تأكيد الشراء</button>
         <button onclick="closeModal()" id="cancel-btn">❌ إلغاء</button>
     </div>
 </div>
 
 <script>
-    // ===================== الإعدادات =====================
-    // 🔴 قم بتغيير هذا الرابط إلى رابط السيرفر الخاص بك على Railway
-    const SERVER_URL = "https://thewallofsolidarity20261-production.up.railway.app";
+    const SERVER_URL = "https://your-railway-app.up.railway.app";
+    const CANVAS_SIZE = 1000;
+    let scale = 4;
+    let minZoom = 2, maxZoom = 20;
+    let ctx, canvas, container;
+    let soldAreas = [];
     
-    // 🔴 قم بتغيير روابط التواصل الاجتماعي هنا
-    const SOCIAL_LINKS = {
-        instagram: "https://instagram.com/yourusername",
-        discord: "https://discord.gg/yourinvite",
-        telegram: "https://t.me/yourchannel"
-    };
-    
-    // تطبيق روابط التواصل
-    document.getElementById('social-instagram').href = SOCIAL_LINKS.instagram;
-    document.getElementById('social-discord').href = SOCIAL_LINKS.discord;
-    document.getElementById('social-telegram').href = SOCIAL_LINKS.telegram;
-    
-    const SIZE = 1000;  // 1000 × 1000 = 1,000,000 بكسل
-    let currentLang = 'ar';
-    let currentColor = "#e74c3c";
-    let soldPixels = new Map();
-    let ws = null;
-    let selectedPixel = null;
-    
-    // إعدادات التكبير
-    let currentZoom = 4;
-    let minZoom = 2;
-    let maxZoom = 20;
-    
-    // الألوان (16 لوناً)
-    const colorsList = [
-        "#e74c3c", "#2c3e50", "#ecf0f1", "#2ecc71", "#f1c40f", "#3498db", "#e67e22", "#9b59b6",
-        "#1abc9c", "#fd79a8", "#8B4513", "#34495e", "#ffeaa7", "#55efc4", "#74b9ff", "#b2bec3"
-    ];
-    
-    // الترجمة
-    const translations = {
-        ar: { title: "اشتر هذا البكسل", desc: "بعد الشراء، سيظهر لونك ورابطك للجميع", confirm: "✅ تأكيد الشراء (1$)", cancel: "❌ إلغاء", langBtn: "English", social: "📢 تابعنا على وسائل التواصل" },
-        en: { title: "Buy This Pixel", desc: "Your color and link will appear to everyone", confirm: "✅ Confirm Purchase (1$)", cancel: "❌ Cancel", langBtn: "العربية", social: "📢 Follow us on social media" }
-    };
+    // متغيرات تحديد المساحة
+    let isSelecting = false;
+    let startX = 0, startY = 0;
+    let endX = 0, endY = 0;
+    let selectedArea = null;
     
     // ===================== إعدادات اللوحة =====================
-    const canvas = document.getElementById('canvas');
-    const container = document.getElementById('canvas-container');
-    let ctx = canvas.getContext('2d');
-    let scale = currentZoom;
+    canvas = document.getElementById('canvas');
+    container = document.getElementById('canvas-container');
+    ctx = canvas.getContext('2d');
     
     function resizeCanvas() {
-        canvas.width = SIZE * scale;
-        canvas.height = SIZE * scale;
-        canvas.style.width = `${SIZE * scale}px`;
-        canvas.style.height = `${SIZE * scale}px`;
-        drawAllPixels();
+        canvas.width = CANVAS_SIZE * scale;
+        canvas.height = CANVAS_SIZE * scale;
+        canvas.style.width = `${CANVAS_SIZE * scale}px`;
+        canvas.style.height = `${CANVAS_SIZE * scale}px`;
+        drawAllAreas();
         const zoomPercent = Math.round((scale / 4) * 100);
         document.getElementById('zoom-level').innerText = `${zoomPercent}%`;
     }
     
-    function drawAllPixels() {
-        if (!ctx) return;
-        for (let y = 0; y < SIZE; y++) {
-            for (let x = 0; x < SIZE; x++) {
-                const key = `${x},${y}`;
-                if (soldPixels.has(key)) {
-                    const data = soldPixels.get(key);
-                    ctx.fillStyle = data.color;
-                    ctx.fillRect(x * scale, y * scale, scale, scale);
-                } else {
-                    ctx.fillStyle = "#2d2d2d";
-                    ctx.fillRect(x * scale, y * scale, scale, scale);
-                }
-            }
+    function drawAllAreas() {
+        ctx.fillStyle = "#2d2d2d";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        for (const area of soldAreas) {
+            const img = new Image();
+            img.onload = () => {
+                ctx.drawImage(img, area.x * scale, area.y * scale, area.width * scale, area.height * scale);
+            };
+            img.src = area.image_url;
         }
     }
     
-    function drawPixel(x, y, color) {
-        if (!ctx) return;
-        ctx.fillStyle = color;
-        ctx.fillRect(x * scale, y * scale, scale, scale);
+    function drawSelection() {
+        if (!isSelecting) return;
+        const rectX = Math.min(startX, endX);
+        const rectY = Math.min(startY, endY);
+        const rectW = Math.abs(endX - startX);
+        const rectH = Math.abs(endY - startY);
+        
+        // رسم المستطيل المؤقت
+        ctx.fillStyle = "rgba(231,76,60,0.3)";
+        ctx.fillRect(rectX * scale, rectY * scale, rectW * scale, rectH * scale);
+        ctx.strokeStyle = "#e74c3c";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(rectX * scale, rectY * scale, rectW * scale, rectH * scale);
+        
+        // تحديث معلومات المساحة
+        const pixels = rectW * rectH;
+        const price = pixels * 1;
+        document.getElementById('selection-info').style.display = 'block';
+        document.getElementById('selection-info').innerHTML = `${rectW}x${rectH} (${pixels} بكسل = ${price}$)`;
+        document.getElementById('selection-info').style.left = (endX * scale + 20) + 'px';
+        document.getElementById('selection-info').style.top = (endY * scale - 30) + 'px';
     }
     
-    function getPixelFromClick(clientX, clientY) {
+    // ===================== أحداث الماوس =====================
+    function getCanvasCoords(e) {
         const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         const canvasX = (clientX - rect.left) * (canvas.width / rect.width);
         const canvasY = (clientY - rect.top) * (canvas.height / rect.height);
-        const x = Math.floor(canvasX / scale);
-        const y = Math.floor(canvasY / scale);
-        return { x, y };
+        return { x: Math.floor(canvasX / scale), y: Math.floor(canvasY / scale) };
     }
     
-    // ===================== أزرار التكبير =====================
+    function onMouseDown(e) {
+        e.preventDefault();
+        const { x, y } = getCanvasCoords(e);
+        startX = x;
+        startY = y;
+        endX = x;
+        endY = y;
+        isSelecting = true;
+    }
+    
+    function onMouseMove(e) {
+        if (!isSelecting) return;
+        e.preventDefault();
+        const { x, y } = getCanvasCoords(e);
+        endX = Math.min(CANVAS_SIZE - 1, Math.max(0, x));
+        endY = Math.min(CANVAS_SIZE - 1, Math.max(0, y));
+        
+        drawAllAreas();
+        drawSelection();
+    }
+    
+    function onMouseUp(e) {
+        if (!isSelecting) return;
+        isSelecting = false;
+        
+        const rectX = Math.min(startX, endX);
+        const rectY = Math.min(startY, endY);
+        const rectW = Math.abs(endX - startX) + 1;
+        const rectH = Math.abs(endY - startY) + 1;
+        
+        if (rectW > 0 && rectH > 0) {
+            // التحقق من أن المساحة غير مباعة
+            let overlap = false;
+            for (const area of soldAreas) {
+                if (!(rectX + rectW <= area.x || area.x + area.width <= rectX ||
+                      rectY + rectH <= area.y || area.y + area.height <= rectY)) {
+                    overlap = true;
+                    break;
+                }
+            }
+            if (overlap) {
+                alert("❌ هذه المساحة متداخلة مع إعلان مباع! اختر مساحة أخرى.");
+            } else {
+                selectedArea = { x: rectX, y: rectY, width: rectW, height: rectH, pixels: rectW * rectH, price: rectW * rectH };
+                document.getElementById('modal-size').innerHTML = `المساحة: ${rectW}x${rectH} (${rectW * rectH} بكسل)`;
+                document.getElementById('modal-price').innerHTML = `السعر: ${rectW * rectH}$`;
+                document.getElementById('purchase-modal').style.display = 'flex';
+            }
+        }
+        
+        drawAllAreas();
+        document.getElementById('selection-info').style.display = 'none';
+    }
+    
+    canvas.addEventListener('mousedown', onMouseDown);
+    canvas.addEventListener('mousemove', onMouseMove);
+    canvas.addEventListener('mouseup', onMouseUp);
+    canvas.addEventListener('touchstart', onMouseDown);
+    canvas.addEventListener('touchmove', onMouseMove);
+    canvas.addEventListener('touchend', onMouseUp);
+    
+    // ===================== التكبير والتصغير =====================
     function zoomIn() { let newZoom = scale + 1; if (newZoom <= maxZoom) { scale = newZoom; resizeCanvas(); } }
     function zoomOut() { let newZoom = scale - 1; if (newZoom >= minZoom) { scale = newZoom; resizeCanvas(); } }
     function zoomReset() { scale = 4; resizeCanvas(); container.scrollTop = (container.scrollHeight - container.clientHeight) / 2; container.scrollLeft = (container.scrollWidth - container.clientWidth) / 2; }
@@ -198,70 +219,59 @@
     document.getElementById('zoom-out').addEventListener('click', zoomOut);
     document.getElementById('zoom-reset').addEventListener('click', zoomReset);
     
-    // ===================== WebSocket =====================
-    function connectWebSocket() {
-        const wsUrl = SERVER_URL.replace("https://", "").replace("http://", "");
-        ws = new WebSocket(`wss://${wsUrl}/ws`);
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            if (data.type === "new_pixel") {
-                const key = `${data.x},${data.y}`;
-                soldPixels.set(key, { color: data.color, owner: data.owner, url: data.url });
-                drawPixel(data.x, data.y, data.color);
-                document.getElementById('pixel-count').innerText = soldPixels.size;
-            }
-        };
-        ws.onclose = () => setTimeout(connectWebSocket, 3000);
-    }
-    
-    // ===================== جلب البيانات =====================
-    async function fetchPixels() {
+    // ===================== جلب المناطق المباعة =====================
+    async function fetchAreas() {
         try {
-            const res = await fetch(`${SERVER_URL}/pixels`);
+            const res = await fetch(`${SERVER_URL}/areas`);
             const data = await res.json();
-            soldPixels.clear();
-            if (data.pixels) {
-                data.pixels.forEach(p => { soldPixels.set(`${p.x},${p.y}`, { color: p.color, owner: p.owner, url: p.url }); });
-            }
-            document.getElementById('pixel-count').innerText = soldPixels.size;
-            drawAllPixels();
+            soldAreas = data.areas || [];
+            document.getElementById('area-count').innerText = soldAreas.length;
+            drawAllAreas();
         } catch(e) { console.error(e); }
     }
     
     // ===================== الشراء =====================
-    canvas.addEventListener('click', (e) => {
-        const { x, y } = getPixelFromClick(e.clientX, e.clientY);
-        if (x >= 0 && x < SIZE && y >= 0 && y < SIZE) {
-            if (soldPixels.has(`${x},${y}`)) { alert("❌ هذا البكسل تم شراؤه بالفعل!"); return; }
-            selectedPixel = { x, y };
-            document.getElementById('purchase-modal').style.display = 'flex';
+    async function createInvoice() {
+        const owner = document.getElementById('owner-name').value.trim();
+        const linkUrl = document.getElementById('owner-url').value.trim();
+        const imageFile = document.getElementById('owner-image').files[0];
+        
+        if (!owner || !linkUrl || !imageFile) {
+            alert("❌ الرجاء إدخال جميع البيانات (الاسم، الرابط، الصورة)");
+            return;
         }
-    });
-    
-    async function createInvoice(owner, url) {
+        
         const loading = document.getElementById('loading');
         loading.style.display = 'block';
+        
+        const formData = new FormData();
+        formData.append('x', selectedArea.x);
+        formData.append('y', selectedArea.y);
+        formData.append('width', selectedArea.width);
+        formData.append('height', selectedArea.height);
+        formData.append('link_url', linkUrl);
+        formData.append('owner', owner);
+        formData.append('image', imageFile);
+        
         try {
             const res = await fetch(`${SERVER_URL}/create-invoice`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ x: selectedPixel.x, y: selectedPixel.y, color: currentColor, owner, url })
+                body: formData
             });
             const data = await res.json();
-            if (data.free) {
-                loading.style.display = 'none';
-                closeModal();
-                alert('🎉 تهانينا! بكسل مجاني!');
-                fetchPixels();
-                return;
-            }
             if (data.pay_url) {
                 loading.style.display = 'none';
                 closeModal();
                 window.open(data.pay_url, '_blank');
                 checkPaymentStatus(data.invoice_id);
-            } else { loading.style.display = 'none'; alert("Error creating invoice"); }
-        } catch(e) { loading.style.display = 'none'; alert("Network error"); }
+            } else {
+                loading.style.display = 'none';
+                alert("Error creating invoice");
+            }
+        } catch(e) {
+            loading.style.display = 'none';
+            alert("Network error");
+        }
     }
     
     async function checkPaymentStatus(invoiceId) {
@@ -275,8 +285,8 @@
                 const data = await res.json();
                 if (data.status === 'paid') {
                     loading.style.display = 'none';
-                    alert('✅ تم تأكيد الدفع!');
-                    fetchPixels();
+                    alert('✅ تم تأكيد الدفع! سيظهر إعلانك على الجدار.');
+                    fetchAreas();
                     return;
                 }
             } catch(e) {}
@@ -289,50 +299,15 @@
         document.getElementById('purchase-modal').style.display = 'none';
         document.getElementById('owner-name').value = '';
         document.getElementById('owner-url').value = '';
+        document.getElementById('owner-image').value = '';
+        selectedArea = null;
     }
     
-    // ===================== لوحة الألوان =====================
-    function buildColorPalette() {
-        const palette = document.getElementById('color-palette');
-        palette.innerHTML = '';
-        colorsList.forEach(color => {
-            const div = document.createElement('div');
-            div.className = 'color';
-            div.style.backgroundColor = color;
-            div.onclick = () => {
-                document.querySelectorAll('.color').forEach(c => c.classList.remove('active'));
-                div.classList.add('active');
-                currentColor = color;
-            };
-            palette.appendChild(div);
-        });
-        document.querySelector('.color').classList.add('active');
-    }
-    
-    // ===================== تبديل اللغة =====================
-    function toggleLanguage() {
-        currentLang = currentLang === 'ar' ? 'en' : 'ar';
-        const t = translations[currentLang];
-        document.getElementById('modal-title').innerText = t.title;
-        document.getElementById('modal-desc').innerText = t.desc;
-        document.getElementById('confirm-purchase').innerText = t.confirm;
-        document.getElementById('cancel-btn').innerText = t.cancel;
-        document.getElementById('lang-btn').innerText = t.langBtn;
-        document.getElementById('social-title').innerText = t.social;
-    }
+    document.getElementById('confirm-purchase').onclick = createInvoice;
     
     // ===================== التشغيل =====================
-    document.getElementById('confirm-purchase').onclick = () => {
-        const owner = document.getElementById('owner-name').value.trim();
-        const url = document.getElementById('owner-url').value.trim();
-        if (!owner || !url) { alert('❌ الرجاء إدخال اسمك ورابط حسابك'); return; }
-        createInvoice(owner, url);
-    };
-    
-    buildColorPalette();
     resizeCanvas();
-    connectWebSocket();
-    fetchPixels();
+    fetchAreas();
 </script>
 </body>
 </html>
